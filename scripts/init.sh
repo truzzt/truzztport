@@ -20,6 +20,36 @@ echo "BROKER_CORE_COMPONENT_URI=http://$IP:13001" >> config/.env
 echo "BROKER_CORE_COMPONENT_CATALOGURI=http://$IP:13001/catalog" >> config/.env
 echo "IP=$IP" >> config/.env
 
+echo "---" > config/daps/omejdn.yml
+echo "plugins:" >> config/daps/omejdn.yml
+echo "  user_db:" >> config/daps/omejdn.yml
+echo "    yaml:" >> config/daps/omejdn.yml
+echo "      location: config/daps/users.yml" >> config/daps/omejdn.yml
+echo "  claim_mapper:" >> config/daps/omejdn.yml
+echo "    attribute:" >> config/daps/omejdn.yml
+echo "      skip_access_token: false" >> config/daps/omejdn.yml
+echo "      skip_id_token: true" >> config/daps/omejdn.yml
+echo "  api:" >> config/daps/omejdn.yml
+echo "    admin_v1:" >> config/daps/omejdn.yml 
+echo "    user_selfservice_v1:" >> config/daps/omejdn.yml
+echo "      allow_deletion: false" >> config/daps/omejdn.yml
+echo "      allow_password_change: true" >> config/daps/omejdn.yml
+echo "      editable_attributes: []" >> config/daps/omejdn.yml
+echo "user_backend_default: yaml" >> config/daps/omejdn.yml
+echo "environment: production" >> config/daps/omejdn.yml
+echo "issuer: http://$IP:13000/auth" >> config/daps/omejdn.yml
+echo "front_url: http://$IP:13000/auth" >> config/daps/omejdn.yml
+echo "bind_to: 0.0.0.0:4567" >> config/daps/omejdn.yml
+echo "openid: true" >> config/daps/omejdn.yml
+echo "default_audience: idsc:IDS_CONNECTORS_ALL" >> config/daps/omejdn.yml
+echo "accept_audience: idsc:IDS_CONNECTORS_ALL" >> config/daps/omejdn.yml
+echo "access_token:" >> config/daps/omejdn.yml
+echo "  expiration: 3600" >> config/daps/omejdn.yml
+echo "  algorithm: RS256" >> config/daps/omejdn.yml
+echo "id_token:" >> config/daps/omejdn.yml
+echo "  expiration: 3600" >> config/daps/omejdn.yml
+echo "  algorithm: RS256" >> config/daps/omejdn.yml
+
 ./scripts/create_client.sh broker.local
 ./scripts/create_client.sh daps.local
 openssl pkcs12 -export -in data/cert/broker.local.crt -inkey data/cert/broker.local.key -out data/cert/broker.local.p12  -password pass:password
