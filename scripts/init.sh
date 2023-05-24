@@ -50,10 +50,20 @@ echo "id_token:" >> config/daps/omejdn.yml
 echo "  expiration: 3600" >> config/daps/omejdn.yml
 echo "  algorithm: RS256" >> config/daps/omejdn.yml
 
+# Create clients for broker and DAPS
 ./scripts/create_client.sh broker.local
 ./scripts/create_client.sh daps.local
-openssl pkcs12 -export -in data/cert/broker.local.crt -inkey data/cert/broker.local.key -out data/cert/broker.local.p12  -password pass:password
-openssl pkcs12 -export -in data/cert/daps.local.crt -inkey data/cert/daps.local.key -out data/cert/daps.local.p12  -password pass:password
-keytool -importkeystore -srckeystore data/cert/broker.local.p12 -srcstoretype pkcs12 -destkeystore data/cert/broker.local.jks -deststoretype jks -deststorepass password -srcstorepass password -noprompt 2>/dev/null
 
+# Transform certificates from .crt and .key to .p12
+BROKER_P12=data/cert/broker.local.p12 
+openssl pkcs12 -export -in data/cert/broker.local.crt -inkey data/cert/broker.local.key -out $BROKER_P12 -password pass:password
+openssl pkcs12 -export -in data/cert/daps.local.crt -inkey data/cert/daps.local.key -out data/cert/daps.local.p12 -password pass:password
+# keytool -importkeystore -srckeystore data/cert/broker.local.p12 -srcstoretype pkcs12 -destkeystore data/cert/broker.local.jks -deststoretype jks -deststorepass password -srcstorepass password -noprompt 2>/dev/null
+
+# Extracting the SKI:AKI for the Broker
+SKI="$(grep -A1 "Subject Key Identifier"  "$BROKER_P12" | tail -n 1 | tr -d ' ')"
+AKI="$(grep -A1 "Authority Key Identifier"  "$BROKER_P12" | tail -n 1 | tr -d ' ')"
+echo "SKI_AKI=$SKI:$AKI" >> config/.env
+
+# Lockfile for accidential override of config
 touch config/init_off.txt

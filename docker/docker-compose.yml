@@ -12,40 +12,85 @@ services:
       - 13003:13003
       - 13004:13004
 
-  broker-core:
-    image: ghcr.io/truzzt/mds-broker-core:5.0.3
-    environment:
-      - SPARQL_ENDPOINT=http://fuseki:3030/connectorData
-      - ELASTICSEARCH_HOSTNAME=elastic
-      - SHACL_VALIDATION=true
-      - DAPS_VALIDATE_INCOMING=false
-      - IDENTITY_JAVAKEYSTORE=/etc/cert/keystore.jks
-      - COMPONENT_URI=$BROKER_CORE_COMPONENT_URI
-      - COMPONENT_CATALOGURI=$BROKER_CORE_COMPONENT_CATALOGURI
-      - DAPS_URL=http://217.72.203.88:13000/token
+
+  broker:
+    image: federated-catalog
+    networks:
+      db:
     depends_on:
-      - elastic
-      - fuseki
-    volumes:
-      - ../data/cert/broker.local.jks:/etc/cert/keystore.jks
-
-  fuseki:
-    image: registry.gitlab.cc-asp.fraunhofer.de/eis-ids/broker-open/fuseki
-    volumes:
-      - fuseki-data:/fuseki
-
-  elastic:
-    image: elasticsearch:7.16.2
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8181:8181"
     environment:
-      - http.port=9200
-      - discovery.type=single-node
-    volumes:      
-      - elastic-data:/usr/share/elasticsearch/data
-
-  mongo:
-    image: mongo:latest
+      EDC_FLYWAY_REPAIR: 'false'
+      EDC_DATASOURCE_DEFAULT_URL: 'jdbc:postgresql://postgres:5432/broker'
+      EDC_DATASOURCE_DEFAULT_USER: 'postgres'
+      EDC_DATASOURCE_DEFAULT_PASSWORD: 'password'
+      EDC_VAULT: /resources/vault/edc/vault.properties
+      EDC_BROKER_BASE_URL: https://broker.test.mobility-dataspace.eu
+      EDC_CLEARINGHOUSE_LOG_URL: https://clearing.test.mobility-dataspace.eu/messages/log
+      EDC_KEYSTORE: /resources/vault/edc/keystore.jks
+      EDC_KEYSTORE_PASSWORD: password
+      EDC_OAUTH_PUBLIC_KEY_ALIAS: 1
+      EDC_OAUTH_PRIVATE_KEY_ALIAS: 1
+      EDC_OAUTH_CLIENT_ID: $SKI_AKI
+      EDC_OAUTH_TOKEN_URL: https://daps.test.mobility-dataspace.eu/token
+      EDC_OAUTH_PROVIDER_JWKS_URL: https://daps.test.mobility-dataspace.eu/jwks.json
+      EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
+  postgres:
+    image: postgres:14-alpine
+    networks:
+      db:
+        aliases:
+          - postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: broker
     volumes:
-      - mongo-data:/data/db
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: "pg_isready --username=postgres && psql --username=postgres --list"
+      timeout: 10s
+      retries: 20
+      start_period: 0s
+
+
+  # broker-core:
+  #   image: ghcr.io/truzzt/mds-broker-core:5.0.3
+  #   environment:
+  #     - SPARQL_ENDPOINT=http://fuseki:3030/connectorData
+  #     - ELASTICSEARCH_HOSTNAME=elastic
+  #     - SHACL_VALIDATION=true
+  #     - DAPS_VALIDATE_INCOMING=false
+  #     - IDENTITY_JAVAKEYSTORE=/etc/cert/keystore.jks
+  #     - COMPONENT_URI=$BROKER_CORE_COMPONENT_URI
+  #     - COMPONENT_CATALOGURI=$BROKER_CORE_COMPONENT_CATALOGURI
+  #     - DAPS_URL=http://217.72.203.88:13000/token
+  #   depends_on:
+  #     - elastic
+  #     - fuseki
+  #   volumes:
+  #     - ../data/cert/broker.local.jks:/etc/cert/keystore.jks
+
+  # fuseki:
+  #   image: registry.gitlab.cc-asp.fraunhofer.de/eis-ids/broker-open/fuseki
+  #   volumes:
+  #     - fuseki-data:/fuseki
+
+  # elastic:
+  #   image: elasticsearch:7.16.2
+  #   environment:
+  #     - http.port=9200
+  #     - discovery.type=single-node
+  #   volumes:      
+  #     - elastic-data:/usr/share/elasticsearch/data
+
+  # mongo:
+  #   image: mongo:latest
+  #   volumes:
+  #     - mongo-data:/data/db
 
   # broker-backend:
   #   image: registry.gitlab.cc-asp.fraunhofer.de/eis-ids/broker/mongodb-handler:5.0.2-DF
@@ -76,6 +121,12 @@ services:
       - ../data/cert/daps.local.key:/opt/keys/omejdn/omejdn.key
 
 volumes:
-  mongo-data:
-  fuseki-data:
-  elastic-data:
+  postgres-data:
+  # mongo-data:
+  # fuseki-data:
+  # elastic-data:
+
+networks:
+  db:
+    internal: true
+    external: false
