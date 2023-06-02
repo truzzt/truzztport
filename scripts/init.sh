@@ -61,9 +61,15 @@ openssl pkcs12 -export -in data/cert/daps.local.crt -inkey data/cert/daps.local.
 # keytool -importkeystore -srckeystore data/cert/broker.local.p12 -srcstoretype pkcs12 -destkeystore data/cert/broker.local.jks -deststoretype jks -deststorepass password -srcstorepass password -noprompt 2>/dev/null
 
 # Extracting the SKI:AKI for the Broker
-SKI="$(grep -A1 "Subject Key Identifier"  "$BROKER_P12" | tail -n 1 | tr -d ' ')"
-AKI="$(grep -A1 "Authority Key Identifier"  "$BROKER_P12" | tail -n 1 | tr -d ' ')"
+TEMP_FILE="$(mktemp)"
+CRT_FILE=data/cert/broker.local.crt 
+openssl x509 -in "$CRT_FILE" -text > "$TEMP_FILE"
+SKI="$(grep -A1 "Subject Key Identifier"  "$TEMP_FILE" | tail -n 1 | tr -d ' ')"
+AKI="$(grep -A1 "Authority Key Identifier"  "$TEMP_FILE" | tail -n 1 | tr -d ' ')"
 echo "SKI_AKI=$SKI:$AKI" >> config/.env
+
+echo "Cleanup.."
+rm -v $TEMP_FILE
 
 # Lockfile for accidential override of config
 touch config/init_off.txt
