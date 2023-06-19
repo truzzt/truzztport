@@ -53,12 +53,13 @@ echo "  algorithm: RS256" >> config/daps/omejdn.yml
 # Create clients for broker and DAPS
 ./scripts/create_client.sh broker.local
 ./scripts/create_client.sh daps.local
+./scripts/create_client.sh test-connector-a.local
+./scripts/create_client.sh test-connector-b.local
 
 # Transform certificates from .crt and .key to .p12
 BROKER_P12=data/cert/broker.local.p12 
 openssl pkcs12 -export -in data/cert/broker.local.crt -inkey data/cert/broker.local.key -out $BROKER_P12 -password pass:password
 openssl pkcs12 -export -in data/cert/daps.local.crt -inkey data/cert/daps.local.key -out data/cert/daps.local.p12 -password pass:password
-# keytool -importkeystore -srckeystore data/cert/broker.local.p12 -srcstoretype pkcs12 -destkeystore data/cert/broker.local.jks -deststoretype jks -deststorepass password -srcstorepass password -noprompt 2>/dev/null
 
 # Extracting the SKI:AKI for the Broker
 TEMP_FILE="$(mktemp)"
@@ -67,6 +68,22 @@ openssl x509 -in "$CRT_FILE" -text > "$TEMP_FILE"
 SKI="$(grep -A1 "Subject Key Identifier"  "$TEMP_FILE" | tail -n 1 | tr -d ' ')"
 AKI="$(grep -A1 "Authority Key Identifier"  "$TEMP_FILE" | tail -n 1 | tr -d ' ')"
 echo "SKI_AKI=$SKI:$AKI" >> config/.env
+
+# Extracting the SKI:AKI for the Broker
+TEMP_FILE="$(mktemp)"
+CRT_FILE=data/cert/test-connector-a.local.crt 
+openssl x509 -in "$CRT_FILE" -text > "$TEMP_FILE"
+SKI="$(grep -A1 "Subject Key Identifier"  "$TEMP_FILE" | tail -n 1 | tr -d ' ')"
+AKI="$(grep -A1 "Authority Key Identifier"  "$TEMP_FILE" | tail -n 1 | tr -d ' ')"
+echo "TEST_EDC_A_SKI_AKI=$SKI:$AKI" >> config/.env
+
+# Extracting the SKI:AKI for the Broker
+TEMP_FILE="$(mktemp)"
+CRT_FILE=data/cert/test-connector-b.local.crt 
+openssl x509 -in "$CRT_FILE" -text > "$TEMP_FILE"
+SKI="$(grep -A1 "Subject Key Identifier"  "$TEMP_FILE" | tail -n 1 | tr -d ' ')"
+AKI="$(grep -A1 "Authority Key Identifier"  "$TEMP_FILE" | tail -n 1 | tr -d ' ')"
+echo "TEST_EDC_B_SKI_AKI=$SKI:$AKI" >> config/.env
 
 echo "Cleanup.."
 rm -v $TEMP_FILE
