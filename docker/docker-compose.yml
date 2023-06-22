@@ -32,7 +32,7 @@ services:
       -  "sh"
       - "-c"
       # - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -jar fc-in-memory.jar"
-      - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005 -jar fc-in-memory.jar"
+      - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar fc-in-memory.jar"
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,6 +74,10 @@ services:
       EDC_OAUTH_TOKEN_URL: http://proxy:13000/token
       EDC_OAUTH_PROVIDER_JWKS_URL: http://proxy:13000/jwks.json
       EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
+
+      EDC_CATALOG_CACHE_EXECUTION_DELAY_SECONDS: 10
+      EDC_CATALOG_CACHE_EXECUTION_PERIOD_SECONDS: 10
+      EDC_CATALOG_CACHE_PARTITION_NUM_CRAWLERS: 5
     volumes:
       - ./resources/vault/broker:/resources/vault/broker
 
@@ -164,7 +168,7 @@ services:
       -  "sh"
       - "-c"
       # - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -jar mds_edc.jar"
-      - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5006 -jar mds_edc.jar"
+      - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006 -jar mds_edc.jar"
     depends_on:
       postgres-a:
         condition: service_healthy
@@ -239,6 +243,90 @@ services:
     volumes:
       - ./resources/vault/edc_a:/resources/vault/edc_a
 
+  test-connector-b:
+    profiles:
+      - test
+    image: registry.orbiter.de/orbiter/mds-edc:${TAG:-dev}
+    restart: always
+    entrypoint:
+      -  "sh"
+      - "-c"
+      # - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -jar mds_edc.jar"
+      - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5007 -jar mds_edc.jar"
+    depends_on:
+      postgres-b:
+        condition: service_healthy
+      broker:
+        condition: service_started
+    ports:
+      - 5007:5007
+    environment:
+      WEB_HTTP_PORT: 13201
+      WEB_HTTP_PATH: /api
+      WEB_HTTP_IDS_PORT: 13203
+      WEB_HTTP_IDS_PATH: /api/v1/ids
+      WEB_HTTP_MANAGEMENT_PORT: 13204
+      WEB_HTTP_MANAGEMENT_PATH: /api/v1/management
+      EDC_IDS_ID: urn:connector:example-connector
+      EDC_IDS_TITLE: 'truzzt Test EDC Connector'
+      EDC_IDS_DESCRIPTION: 'Minimally configured Open Source EDC built by truzzt.'
+      EDC_IDS_ENDPOINT: http://proxy:13203/api/v1/ids
+      IDS_WEBHOOK_ADDRESS: http://proxy:13203
+      EDC_IDS_CURATOR: https://truzzt.com
+      EDC_IDS_MAINTAINER: https://truzzt.com
+      EDC_CONNECTOR_NAME: truzzt-example-connector
+      EDC_HOSTNAME: proxy:13203
+      EDC_API_AUTH_KEY: ApiKeyDefaultValue
+      EDC_WEB_REST_CORS_ENABLED: 'true'
+      EDC_WEB_REST_CORS_HEADERS: 'origin,content-type,accept,authorization,x-api-key'
+      EDC_WEB_REST_CORS_ORIGINS: '*'
+
+      EDC_VAULT: /resources/vault/edc_b/vault.properties
+      EDC_BROKER_BASE_URL: http://proxy:13004
+      EDC_CLEARINGHOUSE_LOG_URL: http://proxy:13005/messages/log
+      EDC_KEYSTORE: /resources/vault/edc_b/keystore.jks
+      EDC_KEYSTORE_PASSWORD: password
+      EDC_OAUTH_PUBLIC_KEY_ALIAS: 1
+      EDC_OAUTH_PRIVATE_KEY_ALIAS: 1
+      EDC_OAUTH_CLIENT_ID: $TEST_EDC_B_SKI_AKI
+      EDC_OAUTH_TOKEN_URL: http://proxy:13000/token
+      EDC_OAUTH_PROVIDER_JWKS_URL: http://proxy:13000/jwks.json
+      EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
+
+      # Flyway Extension
+      EDC_DATASOURCE_ASSET_NAME: asset
+      EDC_DATASOURCE_ASSET_URL: jdbc:postgresql://postgres-b:5432/edc1
+      EDC_DATASOURCE_ASSET_USER: postgres
+      EDC_DATASOURCE_ASSET_PASSWORD: password
+
+      EDC_DATASOURCE_CONTRACTDEFINITION_NAME: contractdefinition
+      EDC_DATASOURCE_CONTRACTDEFINITION_URL: jdbc:postgresql://postgres-b:5432/edc1
+      EDC_DATASOURCE_CONTRACTDEFINITION_USER: postgres
+      EDC_DATASOURCE_CONTRACTDEFINITION_PASSWORD: password
+
+      EDC_DATASOURCE_CONTRACTNEGOTIATION_NAME: contractnegotiation
+      EDC_DATASOURCE_CONTRACTNEGOTIATION_URL: jdbc:postgresql://postgres-b:5432/edc1
+      EDC_DATASOURCE_CONTRACTNEGOTIATION_USER: postgres
+      EDC_DATASOURCE_CONTRACTNEGOTIATION_PASSWORD: password
+
+      EDC_DATASOURCE_POLICY_NAME: policy
+      EDC_DATASOURCE_POLICY_URL: jdbc:postgresql://postgres-b:5432/edc1
+      EDC_DATASOURCE_POLICY_USER: postgres
+      EDC_DATASOURCE_POLICY_PASSWORD: password
+
+      EDC_DATASOURCE_TRANSFERPROCESS_NAME: transferprocess
+      EDC_DATASOURCE_TRANSFERPROCESS_URL: jdbc:postgresql://postgres-b:5432/edc1
+      EDC_DATASOURCE_TRANSFERPROCESS_USER: postgres
+      EDC_DATASOURCE_TRANSFERPROCESS_PASSWORD: password
+
+      EDC_DATASOURCE_DATAPLANEINSTANCE_NAME: dataplaneinstance
+      EDC_DATASOURCE_DATAPLANEINSTANCE_URL: jdbc:postgresql://postgres-b:5432/edc1
+      EDC_DATASOURCE_DATAPLANEINSTANCE_USER: postgres
+      EDC_DATASOURCE_DATAPLANEINSTANCE_PASSWORD: password
+    
+    volumes:
+      - ./resources/vault/edc_b:/resources/vault/edc_b
+
   postgres-a:
     profiles:
       - test
@@ -249,6 +337,22 @@ services:
       POSTGRES_DB: edc1
     volumes:
       - postgres-a-data:/var/lib/postgresql/data
+    healthcheck:
+      test: "pg_isready --username=postgres && psql --username=postgres --list"
+      timeout: 10s
+      retries: 20
+      start_period: 0s
+
+  postgres-b:
+    profiles:
+      - test
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: edc1
+    volumes:
+      - postgres-b-data:/var/lib/postgresql/data
     healthcheck:
       test: "pg_isready --username=postgres && psql --username=postgres --list"
       timeout: 10s
