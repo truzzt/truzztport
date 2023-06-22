@@ -20,6 +20,7 @@ services:
       - 13202:13202 # Test-Connector 2
       - 13203:13203 # Test-Connector 2
       - 13204:13204 # Test-Connector 2
+    restart: always
     depends_on:
       broker:
         condition: service_started
@@ -27,9 +28,17 @@ services:
 
   broker:
     image: federated-catalog
+    entrypoint:
+      -  "sh"
+      - "-c"
+      # - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -jar fc-in-memory.jar"
+      - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005 -jar fc-in-memory.jar"
     depends_on:
       postgres:
         condition: service_healthy
+    restart: always
+    ports:
+      - 5005:5005
     environment:
       WEB_HTTP_PORT: 13001
       WEB_HTTP_PATH: /api
@@ -38,7 +47,7 @@ services:
       WEB_HTTP_IDS_PORT: 13003
       WEB_HTTP_IDS_PATH: /api/v1/ids
       WEB_HTTP_MANAGEMENT_PORT: 13004
-      WEB_HTTP_MANAGEMENT_PATH: /api/v1/management
+      WEB_HTTP_MANAGEMENT_PATH: /
       EDC_IDS_ID: urn:connector:broker
       EDC_IDS_TITLE: 'truzzt IDS BaseCamp Broker'
       EDC_IDS_DESCRIPTION: "Truzzt's IDS BaseCamp Broker"
@@ -56,15 +65,17 @@ services:
       EDC_DATASOURCE_DEFAULT_URL: 'jdbc:postgresql://postgres:5432/broker'
       EDC_DATASOURCE_DEFAULT_USER: 'postgres'
       EDC_DATASOURCE_DEFAULT_PASSWORD: 'password'
-      EDC_VAULT: /resources/vault/edc/vault.properties
-      EDC_KEYSTORE: /resources/vault/edc/keystore.jks
+      EDC_VAULT: /resources/vault/broker/vault.properties
+      EDC_KEYSTORE: /resources/vault/broker/keystore.jks
       EDC_KEYSTORE_PASSWORD: password
-      EDC_OAUTH_PUBLIC_KEY_ALIAS: 1
+      EDC_OAUTH_CERTIFICATE_ALIAS: 1
       EDC_OAUTH_PRIVATE_KEY_ALIAS: 1
       EDC_OAUTH_CLIENT_ID: $SKI_AKI
       EDC_OAUTH_TOKEN_URL: http://proxy:13000/token
       EDC_OAUTH_PROVIDER_JWKS_URL: http://proxy:13000/jwks.json
       EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
+    volumes:
+      - ./resources/vault/broker:/resources/vault/broker
 
   postgres:
     image: postgres:14-alpine
@@ -152,18 +163,18 @@ services:
     entrypoint:
       -  "sh"
       - "-c"
-      - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -jar mds_edc.jar"
-      # - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005 -jar mds_edc.jar"
+      # - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -jar mds_edc.jar"
+      - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5006 -jar mds_edc.jar"
     depends_on:
       postgres-a:
         condition: service_healthy
       broker:
         condition: service_started
+    ports:
+      - 5006:5006
     environment:
       WEB_HTTP_PORT: 13101
       WEB_HTTP_PATH: /api
-      WEB_HTTP_DATA_PORT: 13102
-      WEB_HTTP_DATA_PATH: /api/v1/data
       WEB_HTTP_IDS_PORT: 13103
       WEB_HTTP_IDS_PATH: /api/v1/ids
       WEB_HTTP_MANAGEMENT_PORT: 13104
@@ -171,20 +182,20 @@ services:
       EDC_IDS_ID: urn:connector:example-connector
       EDC_IDS_TITLE: 'truzzt Test EDC Connector'
       EDC_IDS_DESCRIPTION: 'Minimally configured Open Source EDC built by truzzt.'
-      EDC_IDS_ENDPOINT: http://test-connector-a:13103/api/v1/ids
-      IDS_WEBHOOK_ADDRESS: http://test-connector-a:13103
+      EDC_IDS_ENDPOINT: http://proxy:13103/api/v1/ids
+      IDS_WEBHOOK_ADDRESS: http://proxy:13103
       EDC_IDS_CURATOR: https://truzzt.com
       EDC_IDS_MAINTAINER: https://truzzt.com
       EDC_CONNECTOR_NAME: truzzt-example-connector
-      EDC_HOSTNAME: connector.test.truzzt.com
+      EDC_HOSTNAME: proxy:13103
       EDC_API_AUTH_KEY: ApiKeyDefaultValue
       EDC_WEB_REST_CORS_ENABLED: 'true'
       EDC_WEB_REST_CORS_HEADERS: 'origin,content-type,accept,authorization,x-api-key'
       EDC_WEB_REST_CORS_ORIGINS: '*'
 
       EDC_VAULT: /resources/vault/edc_a/vault.properties
-      EDC_BROKER_BASE_URL: $BROKER_CORE_COMPONENT_URI
-      EDC_CLEARINGHOUSE_LOG_URL: http://$IP:13005/messages/log
+      EDC_BROKER_BASE_URL: http://proxy:13004
+      EDC_CLEARINGHOUSE_LOG_URL: http://proxy:13005/messages/log
       EDC_KEYSTORE: /resources/vault/edc_a/keystore.jks
       EDC_KEYSTORE_PASSWORD: password
       EDC_OAUTH_PUBLIC_KEY_ALIAS: 1

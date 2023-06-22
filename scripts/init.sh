@@ -61,28 +61,38 @@ BROKER_P12=data/cert/broker.local.p12
 openssl pkcs12 -export -in data/cert/broker.local.crt -inkey data/cert/broker.local.key -out $BROKER_P12 -password pass:password
 openssl pkcs12 -export -in data/cert/daps.local.crt -inkey data/cert/daps.local.key -out data/cert/daps.local.p12 -password pass:password
 
+PASSWORD=password
+
 # Extracting the SKI:AKI for the Broker
 TEMP_FILE="$(mktemp)"
 CRT_FILE=data/cert/broker.local.crt 
+BROKER_DEST_STORE=docker/resources/vault/broker/keystore.jks
 openssl x509 -in "$CRT_FILE" -text > "$TEMP_FILE"
 SKI="$(grep -A1 "Subject Key Identifier"  "$TEMP_FILE" | tail -n 1 | tr -d ' ')"
 AKI="$(grep -A1 "Authority Key Identifier"  "$TEMP_FILE" | tail -n 1 | tr -d ' ')"
+keytool -importkeystore -srckeystore "$BROKER_P12" -srcstoretype pkcs12 -destkeystore "$BROKER_DEST_STORE" -deststoretype jks -deststorepass "$PASSWORD" -srcstorepass "$PASSWORD" -noprompt 2>/dev/null
 echo "SKI_AKI=$SKI:$AKI" >> config/.env
 
 # Extracting the SKI:AKI for the Broker
 TEMP_FILE="$(mktemp)"
-CRT_FILE=data/cert/test-connector-a.local.crt 
+CRT_FILE=data/cert/test-connector-a.local.crt
+EDC_A_P12=data/cert/test-connector-a.local.p12
+EDC_A_DEST_STORE=docker/resources/vault/edc_a/keystore.jks
 openssl x509 -in "$CRT_FILE" -text > "$TEMP_FILE"
 SKI="$(grep -A1 "Subject Key Identifier"  "$TEMP_FILE" | tail -n 1 | tr -d ' ')"
 AKI="$(grep -A1 "Authority Key Identifier"  "$TEMP_FILE" | tail -n 1 | tr -d ' ')"
+keytool -importkeystore -srckeystore "$EDC_A_P12" -srcstoretype pkcs12 -destkeystore "$EDC_A_DEST_STORE" -deststoretype jks -deststorepass "$PASSWORD" -srcstorepass "$PASSWORD" -noprompt 2>/dev/null
 echo "TEST_EDC_A_SKI_AKI=$SKI:$AKI" >> config/.env
 
 # Extracting the SKI:AKI for the Broker
 TEMP_FILE="$(mktemp)"
 CRT_FILE=data/cert/test-connector-b.local.crt 
+EDC_B_P12=data/cert/test-connector-b.local.p12
+EDC_B_DEST_STORE=docker/resources/vault/edc_b/keystore.jks
 openssl x509 -in "$CRT_FILE" -text > "$TEMP_FILE"
 SKI="$(grep -A1 "Subject Key Identifier"  "$TEMP_FILE" | tail -n 1 | tr -d ' ')"
 AKI="$(grep -A1 "Authority Key Identifier"  "$TEMP_FILE" | tail -n 1 | tr -d ' ')"
+keytool -importkeystore -srckeystore "$EDC_B_P12" -srcstoretype pkcs12 -destkeystore "$EDC_B_DEST_STORE" -deststoretype jks -deststorepass "$PASSWORD" -srcstorepass "$PASSWORD" -noprompt 2>/dev/null
 echo "TEST_EDC_B_SKI_AKI=$SKI:$AKI" >> config/.env
 
 echo "Cleanup.."
