@@ -27,15 +27,15 @@ services:
 
 
   broker:
-    image: federated-catalog
+    image: registry.orbiter.de/truzzt/federated-catalog:latest
     # entrypoint:
       # -  "sh"
       # - "-c"
       # - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -jar fc-in-memory.jar"
       # - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar fc.jar"
-    depends_on:
-      postgres:
-        condition: service_healthy
+    # depends_on:
+    #   postgres:
+    #     condition: service_healthy
     restart: always
     ports:
       - 5005:5005
@@ -81,70 +81,19 @@ services:
     volumes:
       - ./resources/vault/broker:/resources/vault/broker
 
-  postgres:
-    image: postgres:14-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: broker
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: "pg_isready --username=postgres && psql --username=postgres --list"
-      timeout: 10s
-      retries: 20
-      start_period: 0s
-
-
-  # broker-core:
-  #   image: ghcr.io/truzzt/mds-broker-core:5.0.3
+  # postgres:
+  #   image: postgres:14-alpine
   #   environment:
-  #     - SPARQL_ENDPOINT=http://fuseki:3030/connectorData
-  #     - ELASTICSEARCH_HOSTNAME=elastic
-  #     - SHACL_VALIDATION=true
-  #     - DAPS_VALIDATE_INCOMING=false
-  #     - IDENTITY_JAVAKEYSTORE=/etc/cert/keystore.jks
-  #     - COMPONENT_URI=$BROKER_CORE_COMPONENT_URI
-  #     - COMPONENT_CATALOGURI=$BROKER_CORE_COMPONENT_CATALOGURI
-  #     - DAPS_URL=http://217.72.203.88:13000/token
-  #   depends_on:
-  #     - elastic
-  #     - fuseki
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: password
+  #     POSTGRES_DB: broker
   #   volumes:
-  #     - ../data/cert/broker.local.jks:/etc/cert/keystore.jks
-
-  # fuseki:
-  #   image: registry.gitlab.cc-asp.fraunhofer.de/eis-ids/broker-open/fuseki
-  #   volumes:
-  #     - fuseki-data:/fuseki
-
-  # elastic:
-  #   image: elasticsearch:7.16.2
-  #   environment:
-  #     - http.port=9200
-  #     - discovery.type=single-node
-  #   volumes:      
-  #     - elastic-data:/usr/share/elasticsearch/data
-
-  # mongo:
-  #   image: mongo:latest
-  #   volumes:
-  #     - mongo-data:/data/db
-
-  # broker-backend:
-  #   image: registry.gitlab.cc-asp.fraunhofer.de/eis-ids/broker/mongodb-handler:5.0.2-DF
-  #   environment:
-  #     - MONGODB_ENDPOINT=mongodb://mongo:27017/users
-  #     - JWT_SECRET=$BROKER_BACKEND_JWT_SECRET
-  #     - ADMIN_PASSWORD=$ADMIN_PASSWORD
-  #     - BROKER_URL=http://broker-core:8080
-  #   depends_on:
-  #     - mongo
-  
-  # broker-frontend:
-  #   image: registry.gitlab.cc-asp.fraunhofer.de/eis-ids/broker/frontend-mobids:5.0.2-DF
-  #   environment:
-  #     - REACT_APP_BROKER_URL=http://localhost:13002
+  #     - postgres-data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: "pg_isready --username=postgres && psql --username=postgres --list"
+  #     timeout: 10s
+  #     retries: 20
+  #     start_period: 0s
 
   daps-core:
     image: ghcr.io/fraunhofer-aisec/omejdn-server:1.7.1
@@ -364,7 +313,4 @@ volumes:
   postgres-data:
   postgres-a-data:
   postgres-b-data:
-  # mongo-data:
-  # fuseki-data:
-  # elastic-data:
 
