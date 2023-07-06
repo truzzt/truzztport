@@ -1,18 +1,7 @@
 version: "3.8"
 
 services:
-  proxy:
-    image: nginx:1.21.6
-    volumes:
-      - ../config/proxy/nginx.conf:/etc/nginx/templates/default.conf.template
-    ports:
-      - 13000:13000
-      - 13001:13001
-      - 13002:13002
-      - 13003:13003
-      - 13004:13004
-
-  broker-core:
+  broker:
     image: ghcr.io/truzzt/mds-broker-core:5.0.3
     environment:
       - SPARQL_ENDPOINT=http://fuseki:3030/connectorData
@@ -20,19 +9,19 @@ services:
       - SHACL_VALIDATION=true
       - DAPS_VALIDATE_INCOMING=false
       - IDENTITY_JAVAKEYSTORE=/etc/cert/keystore.jks
-      - COMPONENT_URI=$BROKER_CORE_COMPONENT_URI
-      - COMPONENT_CATALOGURI=$BROKER_CORE_COMPONENT_CATALOGURI
-      - DAPS_URL=http://217.72.203.88:13000/token
+      - COMPONENT_URI=https://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+      - COMPONENT_CATALOGURI=https://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/catalog/
+      - DAPS_URL=hhttps://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/token
     depends_on:
       - elastic
       - fuseki
     volumes:
-      - ../data/cert/broker.local.jks:/etc/cert/keystore.jks
+      - ../data/$TRUZZTPORT_ENV_SLUG/broker/:/etc/cert/
 
   fuseki:
     image: registry.gitlab.cc-asp.fraunhofer.de/eis-ids/broker-open/fuseki
     volumes:
-      - fuseki-data:/fuseki
+      - ../data/$TRUZZTPORT_ENV_SLUG/fuseki:/fuseki
 
   elastic:
     image: elasticsearch:7.16.2
@@ -40,42 +29,20 @@ services:
       - http.port=9200
       - discovery.type=single-node
     volumes:      
-      - elastic-data:/usr/share/elasticsearch/data
+      - ../data/$TRUZZTPORT_ENV_SLUG/elastic:/usr/share/elasticsearch/data
 
   mongo:
     image: mongo:latest
     volumes:
-      - mongo-data:/data/db
+      - ../data/$TRUZZTPORT_ENV_SLUG/mongo:/data/db
 
-  # broker-backend:
-  #   image: registry.gitlab.cc-asp.fraunhofer.de/eis-ids/broker/mongodb-handler:5.0.2-DF
-  #   environment:
-  #     - MONGODB_ENDPOINT=mongodb://mongo:27017/users
-  #     - JWT_SECRET=$BROKER_BACKEND_JWT_SECRET
-  #     - ADMIN_PASSWORD=$ADMIN_PASSWORD
-  #     - BROKER_URL=http://broker-core:8080
-  #   depends_on:
-  #     - mongo
-  
-  # broker-frontend:
-  #   image: registry.gitlab.cc-asp.fraunhofer.de/eis-ids/broker/frontend-mobids:5.0.2-DF
-  #   environment:
-  #     - REACT_APP_BROKER_URL=http://localhost:13002
-
-  daps-core:
+  daps:
     image: ghcr.io/fraunhofer-aisec/omejdn-server:1.7.1
     environment:
       - OMEJDN_OPENID=true
       - OMEJDN_ACCEPT_AUDIENCE=idsc:IDS_CONNECTORS_ALL
       - OMEJDN_DEFAULT_AUDIENCE=idsc:IDS_CONNECTORS_ALL
-      - OMEJDN_ADMIN=${DAPS_ADMIN_USERNAME}:${ADMIN_PASSWORD}
+      - OMEJDN_ADMIN=${TRUZZTPORT_ADMIN_USERNAME}:${TRUZZTPORT_ADMIN_PASSWORD}
     volumes:
-      - ../data/daps/clients.yml:/opt/config/clients.yml
-      - ../config/daps:/opt/config
-      - ../data/daps/clients/:/opt/keys/clients
-      - ../data/cert/daps.local.key:/opt/keys/omejdn/omejdn.key
-
-volumes:
-  mongo-data:
-  fuseki-data:
-  elastic-data:
+      - ../data/$TRUZZTPORT_ENV_SLUG/daps/config/:/opt/config/
+      - ../data/$TRUZZTPORT_ENV_SLUG/daps/keys:/opt/keys/
