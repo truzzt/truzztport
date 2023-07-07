@@ -18,6 +18,8 @@ create_preset_directory_structure() {
         "data/$TRUZZTPORT_ENV_SLUG/elastic"
         "data/$TRUZZTPORT_ENV_SLUG/fuseki"
         "data/$TRUZZTPORT_ENV_SLUG/proxy"
+        "data/$TRUZZTPORT_ENV_SLUG/clearing"
+        "data/$TRUZZTPORT_ENV_SLUG/clearing/keys"
     )
 
     # Create directories

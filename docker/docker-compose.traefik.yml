@@ -116,6 +116,21 @@ services:
     networks:
       - traefik-public
 
+  tc-core:
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.constraint-label=traefik-public
+        - traefik.http.routers.clearing-http.rule=Host(`clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
+        - traefik.http.routers.clearing-http.entrypoints=http
+        - traefik.http.routers.clearing-http.middlewares=https-redirect
+        - traefik.http.routers.clearing-https.rule=Host(`clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
+        - traefik.http.routers.clearing-https.entrypoints=https
+        - traefik.http.routers.clearing-https.tls=true
+        - traefik.http.routers.clearing-https.tls.certresolver=le
+        - traefik.http.services.clearing.loadbalancer.server.port=9999
+
 networks:
   traefik-public:
     external: true

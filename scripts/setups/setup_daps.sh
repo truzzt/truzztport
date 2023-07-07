@@ -105,5 +105,7 @@ echo "$users_contents" > $PWD/data/$TRUZZTPORT_ENV_SLUG/daps/config/users.yml
 echo "$webfinger_contents" > $PWD/data/$TRUZZTPORT_ENV_SLUG/daps/config/webfinger.yml
 
 python3 ca/pki.py cert create --subCA "$common_name_subca" --common-name "daps.$common_name_subca" --algo rsa --bits 2048 --hash sha256 --country-name "$country_name" --organization-name "$organization_name" --unit-name "$unit_name" --server --client --san-name "daps.$common_name_subca" --san-ip 127.0.0.1
+openssl x509 -inform "PEM" -outform "DER" -in "data/cert/daps.$common_name_subca.crt" -out "data/cert/daps.$common_name_subca.der"
 cp "$PWD/data/cert/daps.$common_name_subca.key" "$PWD/data/$TRUZZTPORT_ENV_SLUG/daps/keys/omejdn/omejdn.key"
 cp "$PWD/data/cert/daps.$common_name_subca.crt" "$PWD/data/$TRUZZTPORT_ENV_SLUG/broker/daps.crt"
+cp "$PWD/data/cert/daps.$common_name_subca.der" "$PWD/data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der"

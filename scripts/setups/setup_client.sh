@@ -20,6 +20,9 @@ python3 ca/pki.py cert create --subCA "$common_name_subca" --common-name "$clien
 CLIENT_CERT="data/cert/$client_name.crt"
 openssl pkcs12 -export -in "$CLIENT_CERT" -inkey "data/cert/${client_name}.key" -out "data/cert/${client_name}.p12" -password pass:password
 
+# Import PKCS12 keystore to JKS format
+keytool -importkeystore -srckeystore "$PWD/data/cert/${client_name}.p12" -srcstoretype pkcs12 -destkeystore "$PWD/data/cert/${client_name}.jks" -deststoretype jks -deststorepass password -srcstorepass password -noprompt 2>/dev/null
+
 # Extract SKI and AKI from client certificate
 SKI="$(openssl x509 -in "data/cert/${client_name}.crt" -noout -text | awk '/Subject Key Identifier/ {getline; print}' | tr -d ' ')"
 AKI="$(openssl x509 -in "data/cert/${client_name}.crt" -noout -text | awk '/Authority Key Identifier/ {getline; print}' | tr -d ' ')"
@@ -41,9 +44,9 @@ cat >> "data/$TRUZZTPORT_ENV_SLUG/daps/config/clients.yml" <<EOF
     - key: idsc
       value: IDS_CONNECTOR_ATTRIBUTES_ALL
     - key: securityProfile
-      value: $CLIENT_SECURITY_PROFILE
+      value: idsc:BASE_SECURITY_PROFILE
     - key: referringConnector
-      value: http://$client_name
+      value: https://$client_name
     - key: "@type"
       value: ids:DatPayload
     - key: "@context"
@@ -51,7 +54,3 @@ cat >> "data/$TRUZZTPORT_ENV_SLUG/daps/config/clients.yml" <<EOF
     - key: transportCertsSha256
       value: $CLIENT_CERT_SHA
 EOF
-
-# Copy client certificate to clients directory
-cp "$CLIENT_CERT" "data/$TRUZZTPORT_ENV_SLUG/daps/keys/${CLIENT_ID}.crt"
-

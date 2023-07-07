@@ -46,3 +46,49 @@ services:
     volumes:
       - ../data/$TRUZZTPORT_ENV_SLUG/daps/config/:/opt/config/
       - ../data/$TRUZZTPORT_ENV_SLUG/daps/keys:/opt/keys/
+
+  tc-core:
+    image: ghcr.io/truzzt/truzztport/clearing:latest
+    # tty: true
+    # stdin_open: true
+    volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/allow-all-flows.pl:/root/deploy/allow-all-flows.pl
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/keystore.p12:/root/etc/keystore.p12
+        # - ../data/$TRUZZTPORT_ENV_SLUG/clearing/truststore.p12:/root/etc/truststore.p12
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/clearing-house-routes.xml:/root/deploy/clearing-house-routes.xml
+    environment:
+        TC_DAPS_URL: https://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+        TC_CH_ISSUER_CONNECTOR: https://clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+        TC_CH_AGENT: https://clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+
+  keyring:
+    image: ghcr.io/truzzt/truzztport/keyring:latest
+    environment:
+        - API_LOG_LEVEL=Info
+    volumes:
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/keyring/init_db:/server/init_db
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-keyring.toml:/server/Rocket.toml
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
+
+  document:
+    image: ghcr.io/truzzt/truzztport/document:latest
+    depends_on:
+        - keyring
+    environment:
+        - API_LOG_LEVEL=Info
+    volumes:
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-document.toml:/server/Rocket.toml
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
+
+  logging:
+    image: ghcr.io/truzzt/truzztport/logging:latest
+    depends_on:
+        - document
+        - keyring
+    environment:
+        - API_LOG_LEVEL=Debug
+    volumes:
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-logging.toml:/server/Rocket.toml
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/keys:/server/keys
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
