@@ -1,0 +1,121 @@
+version: "3.8"
+
+services:
+  traefik:
+    image: traefik:v2.10
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../data/${ENV_SLUG}/proxy:/certificates
+    command:
+      - --providers.docker
+      - --providers.docker.constraints=Label(`traefik.constraint-label`, `traefik-public`)
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.http.address=:80
+      - --entrypoints.https.address=:443
+      - --certificatesresolvers.le.acme.email=$TRUZZTPORT_LE_EMAIL
+      - --certificatesresolvers.le.acme.storage=/certificates/acme.json
+      - --certificatesresolvers.le.acme.tlschallenge=true
+    networks:
+      - traefik-public
+
+  daps:
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.constraint-label=traefik-public
+        - traefik.http.routers.daps-http.rule=Host(`daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
+        - traefik.http.routers.daps-http.entrypoints=http
+        - traefik.http.routers.daps-http.middlewares=https-redirect
+        - traefik.http.routers.daps-https.rule=Host(`daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
+        - traefik.http.routers.daps-https.entrypoints=https
+        - traefik.http.routers.daps-https.tls=true
+        - traefik.http.routers.daps-https.tls.certresolver=le
+        - traefik.http.services.daps.loadbalancer.server.port=4567   
+    networks:
+      - traefik-public
+
+  broker:
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.constraint-label=traefik-public
+        - traefik.http.routers.broker-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
+        - traefik.http.routers.broker-http.entrypoints=http
+        - traefik.http.routers.broker-http.middlewares=https-redirect
+        - traefik.http.routers.broker-https.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
+        - traefik.http.routers.broker-https.entrypoints=https
+        - traefik.http.routers.broker-https.tls=true
+        - traefik.http.routers.broker-https.tls.certresolver=le
+        - traefik.http.services.broker.loadbalancer.server.port=8080
+    networks:
+      - traefik-public
+
+  elasticsearch:
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.constraint-label=traefik-public
+        - traefik.http.routers.elastic-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/es`)
+        - traefik.http.routers.elastic-http.entrypoints=http
+        - traefik.http.routers.elastic-http.middlewares=https-redirect
+        - traefik.http.routers.elastic-https.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/es`)
+        - traefik.http.routers.elastic-https.entrypoints=https
+        - traefik.http.routers.elastic-https.tls=true
+        - traefik.http.routers.elastic-https.tls.certresolver=le
+        - traefik.http.services.elastic.loadbalancer.server.port=9200
+        - traefik.http.middlewares.example.stripprefix.prefixes=/es
+        - traefik.http.middlewares.testheader.headers.accesscontrolalloworiginlist=https://catalog.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+        - traefik.http.middlewares.testheader.headers.accessControlAllowCredentials=true
+        - traefik.http.middlewares.testheader.headers.accessControlAllowHeaders=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization,authorization,x-search-query,x-search-filters
+        - traefik.http.routers.elastic-https.middlewares=example,testheader
+    networks:
+      - traefik-public
+
+  broker-admin:
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.constraint-label=traefik-public
+        - traefik.http.routers.users-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/users`)
+        - traefik.http.routers.users-http.entrypoints=http
+        - traefik.http.routers.users-http.middlewares=https-redirect
+        - traefik.http.routers.users-https.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/users`)
+        - traefik.http.routers.users-https.entrypoints=https
+        - traefik.http.routers.users-https.tls=true
+        - traefik.http.routers.users-https.tls.certresolver=le
+        - traefik.http.services.users.loadbalancer.server.port=4000
+        - traefik.http.middlewares.prefix-users.stripprefix.prefixes=/users
+        - traefik.http.middlewares.testheader-users.headers.accesscontrolalloworiginlist=https://catalog.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+        - traefik.http.middlewares.testheader-users.headers.accessControlAllowCredentials=true
+        - traefik.http.middlewares.testheader-users.headers.accessControlAllowHeaders=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization,authorization,x-search-query,x-search-filters
+        - traefik.http.routers.users-https.middlewares=prefix-users,testheader-users
+    networks:
+      - traefik-public
+
+  broker-ui:
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.constraint-label=traefik-public
+        - traefik.http.routers.broker-frontend-http.rule=Host(`catalog.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
+        - traefik.http.routers.broker-frontend-http.entrypoints=http
+        - traefik.http.routers.broker-frontend-http.middlewares=https-redirect
+        - traefik.http.routers.broker-frontend-https.rule=Host(`catalog.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
+        - traefik.http.routers.broker-frontend-https.entrypoints=https
+        - traefik.http.routers.broker-frontend-https.tls=true
+        - traefik.http.routers.broker-frontend-https.tls.certresolver=le
+        - traefik.http.services.broker-frontend.loadbalancer.server.port=80
+    networks:
+      - traefik-public
+
+networks:
+  traefik-public:
+    external: true

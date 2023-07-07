@@ -17,6 +17,7 @@ create_preset_directory_structure() {
         "data/$TRUZZTPORT_ENV_SLUG/mongo"
         "data/$TRUZZTPORT_ENV_SLUG/elastic"
         "data/$TRUZZTPORT_ENV_SLUG/fuseki"
+        "data/$TRUZZTPORT_ENV_SLUG/proxy"
     )
 
     # Create directories
