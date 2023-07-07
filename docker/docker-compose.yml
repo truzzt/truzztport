@@ -2,39 +2,69 @@ version: "3.8"
 
 services:
   broker:
-    image: ghcr.io/truzzt/mds-broker-core:5.0.3
+    image: ghcr.io/truzzt/federated-catalog:0.0.1-milestone-8
+    restart: always
     environment:
-      - SPARQL_ENDPOINT=http://fuseki:3030/connectorData
-      - ELASTICSEARCH_HOSTNAME=elastic
-      - SHACL_VALIDATION=true
-      - DAPS_VALIDATE_INCOMING=false
-      - IDENTITY_JAVAKEYSTORE=/etc/cert/keystore.jks
-      - COMPONENT_URI=https://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
-      - COMPONENT_CATALOGURI=https://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/catalog/
-      - DAPS_URL=hhttps://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/token
-    depends_on:
-      - elastic
-      - fuseki
-    volumes:
-      - ../data/$TRUZZTPORT_ENV_SLUG/broker/:/etc/cert/
+      WEB_HTTP_PORT: 13001
+      WEB_HTTP_PATH: /api
+      WEB_HTTP_DATA_PORT: 13002
+      WEB_HTTP_DATA_PATH: /api/v1/data
+      WEB_HTTP_IDS_PORT: 13003
+      WEB_HTTP_IDS_PATH: /api/v1/ids
+      WEB_HTTP_MANAGEMENT_PORT: 13004
+      WEB_HTTP_MANAGEMENT_PATH: /api/v1/management
+      EDC_IDS_ID: urn:connector:broker
+      EDC_IDS_TITLE: 'truzzt IDS BaseCamp Broker'
+      EDC_IDS_DESCRIPTION: "Truzzt's IDS BaseCamp Broker"
+      EDC_IDS_ENDPOINT: https://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/api/v1/ids
+      IDS_WEBHOOK_ADDRESS: https://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+      EDC_IDS_CURATOR: https://truzzt.com
+      EDC_IDS_MAINTAINER: https://truzzt.com
+      EDC_CONNECTOR_NAME: truzzt-example-connector
+      EDC_HOSTNAME: https://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+      EDC_API_AUTH_KEY: ApiKeyDefaultValue
+      EDC_WEB_REST_CORS_ENABLED: 'true'
+      EDC_WEB_REST_CORS_HEADERS: 'origin,content-type,accept,authorization,x-api-key'
+      EDC_WEB_REST_CORS_ORIGINS: '*'
+      EDC_FLYWAY_REPAIR: 'false'
+      EDC_DATASOURCE_DEFAULT_URL: 'jdbc:postgresql://postgres:5432/broker'
+      EDC_DATASOURCE_DEFAULT_USER: 'postgres'
+      EDC_DATASOURCE_DEFAULT_PASSWORD: 'password'
+      EDC_VAULT: /resources/vault/broker/vault.properties
+      EDC_KEYSTORE: /resources/vault/broker/keystore.jks
+      EDC_KEYSTORE_PASSWORD: password
+      EDC_OAUTH_CERTIFICATE_ALIAS: 1
+      EDC_OAUTH_PRIVATE_KEY_ALIAS: 1
+      EDC_OAUTH_CLIENT_ID: $SKI_AKI
+      EDC_OAUTH_TOKEN_URL: https://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/token
+      EDC_OAUTH_PROVIDER_JWKS_URL: https://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/jwks.json
+      EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
 
-  fuseki:
-    image: registry.gitlab.cc-asp.fraunhofer.de/eis-ids/broker-open/fuseki
+      EDC_CATALOG_CACHE_EXECUTION_DELAY_SECONDS: 10
+      EDC_CATALOG_CACHE_EXECUTION_PERIOD_SECONDS: 10
+      EDC_CATALOG_CACHE_PARTITION_NUM_CRAWLERS: 5
     volumes:
-      - ../data/$TRUZZTPORT_ENV_SLUG/fuseki:/fuseki
+      - ../data/$TRUZZTPORT_ENV_SLUG/broker:/resources/vault/broker
+    networks:
+      - mds-net
 
-  elastic:
-    image: elasticsearch:7.16.2
+  postgres:
+    image: postgres:14-alpine
     environment:
-      - http.port=9200
-      - discovery.type=single-node
-    volumes:      
-      - ../data/$TRUZZTPORT_ENV_SLUG/elastic:/usr/share/elasticsearch/data
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: broker
+    volumes:
+      - ../data/$TRUZZTPORT_ENV_SLUG/postgres:/var/lib/postgresql/data
+    networks:
+      - mds-net
 
   mongo:
     image: mongo:latest
     volumes:
       - ../data/$TRUZZTPORT_ENV_SLUG/mongo:/data/db
+    networks:
+      - mds-net
 
   daps:
     image: ghcr.io/fraunhofer-aisec/omejdn-server:1.7.1
@@ -61,6 +91,8 @@ services:
         TC_DAPS_URL: https://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
         TC_CH_ISSUER_CONNECTOR: https://clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
         TC_CH_AGENT: https://clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+    networks:
+      - mds-net
 
   keyring:
     image: ghcr.io/truzzt/truzztport/keyring:latest
@@ -70,6 +102,8 @@ services:
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/keyring/init_db:/server/init_db
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-keyring.toml:/server/Rocket.toml
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
+    networks:
+      - mds-net
 
   document:
     image: ghcr.io/truzzt/truzztport/document:latest
@@ -80,6 +114,8 @@ services:
     volumes:
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-document.toml:/server/Rocket.toml
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
+    networks:
+      - mds-net
 
   logging:
     image: ghcr.io/truzzt/truzztport/logging:latest
@@ -92,3 +128,8 @@ services:
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-logging.toml:/server/Rocket.toml
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/keys:/server/keys
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
+    networks:
+      - mds-net
+
+networks:
+  mds-net:

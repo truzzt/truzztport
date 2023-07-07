@@ -8,128 +8,79 @@ services:
       - 443:443
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ../data/${ENV_SLUG}/proxy:/certificates
+      - ../data/${TRUZZTPORT_ENV_SLUG}/proxy:/certificates
     command:
-      - --providers.docker
-      - --providers.docker.constraints=Label(`traefik.constraint-label`, `traefik-public`)
+      - --providers.docker=true
+      - --entryPoints.web.address=:80
+      - --entryPoints.websecure.address=:443
       - --providers.docker.exposedbydefault=false
-      - --entrypoints.http.address=:80
-      - --entrypoints.https.address=:443
       - --certificatesresolvers.le.acme.email=$TRUZZTPORT_LE_EMAIL
       - --certificatesresolvers.le.acme.storage=/certificates/acme.json
       - --certificatesresolvers.le.acme.tlschallenge=true
+      - --api.dashboard=true
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.dashboard.rule=Host(`traefik.dev.truzzt.com`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+      - traefik.http.routers.dashboard.service=api@internal
+      - traefik.http.routers.dashboard.middlewares=auth
+      - traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$sfMMH.Mj$$M3PtggBoBBG1cc8pGboD80
     networks:
       - traefik-public
 
   daps:
-    deploy:
-      labels:
-        - traefik.enable=true
-        - traefik.docker.network=traefik-public
-        - traefik.constraint-label=traefik-public
-        - traefik.http.routers.daps-http.rule=Host(`daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
-        - traefik.http.routers.daps-http.entrypoints=http
-        - traefik.http.routers.daps-http.middlewares=https-redirect
-        - traefik.http.routers.daps-https.rule=Host(`daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
-        - traefik.http.routers.daps-https.entrypoints=https
-        - traefik.http.routers.daps-https.tls=true
-        - traefik.http.routers.daps-https.tls.certresolver=le
-        - traefik.http.services.daps.loadbalancer.server.port=4567   
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.daps-http.rule=Host(`daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
+      - traefik.http.routers.daps-https.rule=Host(`daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
+      - traefik.http.routers.daps-https.tls=true
+      - traefik.http.routers.daps-https.tls.certresolver=le
+      - traefik.http.services.daps.loadbalancer.server.port=4567   
     networks:
       - traefik-public
 
   broker:
-    deploy:
-      labels:
-        - traefik.enable=true
-        - traefik.docker.network=traefik-public
-        - traefik.constraint-label=traefik-public
-        - traefik.http.routers.broker-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
-        - traefik.http.routers.broker-http.entrypoints=http
-        - traefik.http.routers.broker-http.middlewares=https-redirect
-        - traefik.http.routers.broker-https.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
-        - traefik.http.routers.broker-https.entrypoints=https
-        - traefik.http.routers.broker-https.tls=true
-        - traefik.http.routers.broker-https.tls.certresolver=le
-        - traefik.http.services.broker.loadbalancer.server.port=8080
-    networks:
-      - traefik-public
+    labels:
+      - traefik.enable=true
+      # managment api
+      - traefik.http.routers.broker-managment-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api/v1/management`)
+      - traefik.http.routers.broker-managment-https.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api/v1/management`)
+      - traefik.http.routers.broker-managment-https.tls=true
+      - traefik.http.routers.broker-managment-https.tls.certresolver=le
+      - traefik.http.services.broker-managment-https.loadbalancer.server.port=13004
 
-  elasticsearch:
-    deploy:
-      labels:
-        - traefik.enable=true
-        - traefik.docker.network=traefik-public
-        - traefik.constraint-label=traefik-public
-        - traefik.http.routers.elastic-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/es`)
-        - traefik.http.routers.elastic-http.entrypoints=http
-        - traefik.http.routers.elastic-http.middlewares=https-redirect
-        - traefik.http.routers.elastic-https.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/es`)
-        - traefik.http.routers.elastic-https.entrypoints=https
-        - traefik.http.routers.elastic-https.tls=true
-        - traefik.http.routers.elastic-https.tls.certresolver=le
-        - traefik.http.services.elastic.loadbalancer.server.port=9200
-        - traefik.http.middlewares.example.stripprefix.prefixes=/es
-        - traefik.http.middlewares.testheader.headers.accesscontrolalloworiginlist=https://catalog.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
-        - traefik.http.middlewares.testheader.headers.accessControlAllowCredentials=true
-        - traefik.http.middlewares.testheader.headers.accessControlAllowHeaders=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization,authorization,x-search-query,x-search-filters
-        - traefik.http.routers.elastic-https.middlewares=example,testheader
-    networks:
-      - traefik-public
+      # ids api
+      - traefik.http.routers.broker-ids-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api/v1/ids`)
+      - traefik.http.routers.broker-ids-https.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api/v1/ids`)
+      - traefik.http.routers.broker-ids-https.tls=true
+      - traefik.http.routers.broker-ids-https.tls.certresolver=le
+      - traefik.http.services.broker-ids-https.loadbalancer.server.port=13003
 
-  broker-admin:
-    deploy:
-      labels:
-        - traefik.enable=true
-        - traefik.docker.network=traefik-public
-        - traefik.constraint-label=traefik-public
-        - traefik.http.routers.users-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/users`)
-        - traefik.http.routers.users-http.entrypoints=http
-        - traefik.http.routers.users-http.middlewares=https-redirect
-        - traefik.http.routers.users-https.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/users`)
-        - traefik.http.routers.users-https.entrypoints=https
-        - traefik.http.routers.users-https.tls=true
-        - traefik.http.routers.users-https.tls.certresolver=le
-        - traefik.http.services.users.loadbalancer.server.port=4000
-        - traefik.http.middlewares.prefix-users.stripprefix.prefixes=/users
-        - traefik.http.middlewares.testheader-users.headers.accesscontrolalloworiginlist=https://catalog.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
-        - traefik.http.middlewares.testheader-users.headers.accessControlAllowCredentials=true
-        - traefik.http.middlewares.testheader-users.headers.accessControlAllowHeaders=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization,authorization,x-search-query,x-search-filters
-        - traefik.http.routers.users-https.middlewares=prefix-users,testheader-users
-    networks:
-      - traefik-public
+      # data api
+      - traefik.http.routers.broker-data-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api/v1/data`)
+      - traefik.http.routers.broker-data-https.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api/v1/data`)
+      - traefik.http.routers.broker-data-https.tls=true
+      - traefik.http.routers.broker-data-https.tls.certresolver=le
+      - traefik.http.services.broker-data-https.loadbalancer.server.port=13002
 
-  broker-ui:
-    deploy:
-      labels:
-        - traefik.enable=true
-        - traefik.docker.network=traefik-public
-        - traefik.constraint-label=traefik-public
-        - traefik.http.routers.broker-frontend-http.rule=Host(`catalog.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
-        - traefik.http.routers.broker-frontend-http.entrypoints=http
-        - traefik.http.routers.broker-frontend-http.middlewares=https-redirect
-        - traefik.http.routers.broker-frontend-https.rule=Host(`catalog.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
-        - traefik.http.routers.broker-frontend-https.entrypoints=https
-        - traefik.http.routers.broker-frontend-https.tls=true
-        - traefik.http.routers.broker-frontend-https.tls.certresolver=le
-        - traefik.http.services.broker-frontend.loadbalancer.server.port=80
+      # api
+      - traefik.http.routers.broker-api-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api`)
+      - traefik.http.routers.broker-api-https.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api`)
+      - traefik.http.routers.broker-api-https.tls=true
+      - traefik.http.routers.broker-api-https.tls.certresolver=le
+      - traefik.http.services.broker-api-https.loadbalancer.server.port=13001
     networks:
       - traefik-public
 
   tc-core:
-    deploy:
-      labels:
-        - traefik.enable=true
-        - traefik.docker.network=traefik-public
-        - traefik.constraint-label=traefik-public
-        - traefik.http.routers.clearing-http.rule=Host(`clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
-        - traefik.http.routers.clearing-http.entrypoints=http
-        - traefik.http.routers.clearing-http.middlewares=https-redirect
-        - traefik.http.routers.clearing-https.rule=Host(`clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
-        - traefik.http.routers.clearing-https.entrypoints=https
-        - traefik.http.routers.clearing-https.tls=true
-        - traefik.http.routers.clearing-https.tls.certresolver=le
-        - traefik.http.services.clearing.loadbalancer.server.port=9999
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.clearing-http.rule=Host(`clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
+      - traefik.http.routers.clearing-https.rule=Host(`clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
+      - traefik.http.routers.clearing-https.tls=true
+      - traefik.http.routers.clearing-https.tls.certresolver=le
+      - traefik.http.services.clearing.loadbalancer.server.port=9999
+    networks:
+      - traefik-public
 
 networks:
   traefik-public:
