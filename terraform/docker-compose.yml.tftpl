@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+%{ for i in connectors ~}
+  ${i.name}:
+    image: registry.orbiter.de/orbiter/mds-edc:$${TAG:-dev}
+    restart: always
+    ports:
+      - ${i.port_api}:${i.port_api}
+      - ${i.port_ids}:${i.port_ids}
+      - ${i.port_management}:${i.port_management}
+    environment:
+      WEB_HTTP_PORT: ${i.port_api}
+      WEB_HTTP_PATH: /api
+      WEB_HTTP_IDS_PORT: ${i.port_ids}
+      WEB_HTTP_IDS_PATH: /api/v1/ids
+      WEB_HTTP_MANAGEMENT_PORT: ${i.port_management}
+      WEB_HTTP_MANAGEMENT_PATH: /api/v1/management
+      EDC_IDS_ID: urn:connector:example-connector
+      EDC_IDS_TITLE: 'truzzt ${i.name}'
+      EDC_IDS_DESCRIPTION: 'Minimally configured Open Source EDC built by truzzt.'
+      EDC_IDS_ENDPOINT: http://proxy:${i.port_ids}/api/v1/ids
+      IDS_WEBHOOK_ADDRESS: http://proxy:${i.port_ids}
+      EDC_IDS_CURATOR: https://truzzt.com
+      EDC_IDS_MAINTAINER: https://truzzt.com
+      EDC_CONNECTOR_NAME: truzzt-example-connector
+      EDC_HOSTNAME: proxy:${i.port_ids}
+      EDC_API_AUTH_KEY: ApiKeyDefaultValue
+      EDC_WEB_REST_CORS_ENABLED: 'true'
+      EDC_WEB_REST_CORS_HEADERS: 'origin,content-type,accept,authorization,x-api-key'
+      EDC_WEB_REST_CORS_ORIGINS: '*'
+      EDC_VAULT: /resources/connector/vault.properties
+      EDC_BROKER_BASE_URL: http://proxy:13004
+      EDC_CLEARINGHOUSE_LOG_URL: http://proxy:13005/messages/log
+      EDC_KEYSTORE: /resources/connector/keystore.jks
+      EDC_KEYSTORE_PASSWORD: password
+      EDC_OAUTH_PUBLIC_KEY_ALIAS: 1
+      EDC_OAUTH_PRIVATE_KEY_ALIAS: 1
+      EDC_OAUTH_CLIENT_ID: $TEST_EDC_A_SKI_AKI
+      EDC_OAUTH_TOKEN_URL: http://proxy:13000/token
+      EDC_OAUTH_PROVIDER_JWKS_URL: http://proxy:13000/jwks.json
+      EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
+    volumes:
+      - ./resources/${replace(i.name, "_", "-")}:/resources/connector
+
+%{ endfor ~}
