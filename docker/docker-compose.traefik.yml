@@ -47,9 +47,9 @@ services:
       - traefik.http.services.broker-data.loadbalancer.server.port=13002
 
       # api
-      # - traefik.http.routers.broker-api-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api`)
-      # - traefik.http.routers.broker-api-http.service=broker-api
-      # - traefik.http.services.broker-api.loadbalancer.server.port=13001
+      - traefik.http.routers.broker-api-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api`)
+      - traefik.http.routers.broker-api-http.service=broker-api
+      - traefik.http.services.broker-api.loadbalancer.server.port=13001
 
   tc-core:
     labels:
