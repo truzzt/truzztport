@@ -4,6 +4,10 @@ services:
   broker:
     image: ghcr.io/truzzt/federated-catalog:0.0.1-milestone-8
     restart: always
+    healthcheck:
+      disable: true
+    depends_on:
+      - postgres
     environment:
       WEB_HTTP_PORT: 13001
       WEB_HTTP_PATH: /api
@@ -12,16 +16,16 @@ services:
       WEB_HTTP_IDS_PORT: 13003
       WEB_HTTP_IDS_PATH: /api/v1/ids
       WEB_HTTP_MANAGEMENT_PORT: 13004
-      WEB_HTTP_MANAGEMENT_PATH: /api/v1/management
+      WEB_HTTP_MANAGEMENT_PATH: /
       EDC_IDS_ID: urn:connector:broker
       EDC_IDS_TITLE: 'truzzt IDS BaseCamp Broker'
       EDC_IDS_DESCRIPTION: "Truzzt's IDS BaseCamp Broker"
-      EDC_IDS_ENDPOINT: https://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/api/v1/ids
-      IDS_WEBHOOK_ADDRESS: https://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
-      EDC_IDS_CURATOR: https://truzzt.com
-      EDC_IDS_MAINTAINER: https://truzzt.com
+      EDC_IDS_ENDPOINT: http://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/api/v1/ids
+      IDS_WEBHOOK_ADDRESS: http://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+      EDC_IDS_CURATOR: http://truzzt.com
+      EDC_IDS_MAINTAINER: http://truzzt.com
       EDC_CONNECTOR_NAME: truzzt-example-connector
-      EDC_HOSTNAME: https://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+      EDC_HOSTNAME: broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
       EDC_API_AUTH_KEY: ApiKeyDefaultValue
       EDC_WEB_REST_CORS_ENABLED: 'true'
       EDC_WEB_REST_CORS_HEADERS: 'origin,content-type,accept,authorization,x-api-key'
@@ -35,9 +39,9 @@ services:
       EDC_KEYSTORE_PASSWORD: password
       EDC_OAUTH_CERTIFICATE_ALIAS: 1
       EDC_OAUTH_PRIVATE_KEY_ALIAS: 1
-      EDC_OAUTH_CLIENT_ID: $SKI_AKI
-      EDC_OAUTH_TOKEN_URL: https://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/token
-      EDC_OAUTH_PROVIDER_JWKS_URL: https://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/jwks.json
+      EDC_OAUTH_CLIENT_ID: $TRUZZTPORT_BROKER_SKI_AKI
+      EDC_OAUTH_TOKEN_URL: http://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/token
+      EDC_OAUTH_PROVIDER_JWKS_URL: http://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/jwks.json
       EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
 
       EDC_CATALOG_CACHE_EXECUTION_DELAY_SECONDS: 10
@@ -45,8 +49,6 @@ services:
       EDC_CATALOG_CACHE_PARTITION_NUM_CRAWLERS: 5
     volumes:
       - ../data/$TRUZZTPORT_ENV_SLUG/broker:/resources/vault/broker
-    networks:
-      - mds-net
 
   postgres:
     image: postgres:14-alpine
@@ -56,15 +58,11 @@ services:
       POSTGRES_DB: broker
     volumes:
       - ../data/$TRUZZTPORT_ENV_SLUG/postgres:/var/lib/postgresql/data
-    networks:
-      - mds-net
 
   mongo:
     image: mongo:latest
     volumes:
       - ../data/$TRUZZTPORT_ENV_SLUG/mongo:/data/db
-    networks:
-      - mds-net
 
   daps:
     image: ghcr.io/fraunhofer-aisec/omejdn-server:1.7.1
@@ -88,11 +86,9 @@ services:
         # - ../data/$TRUZZTPORT_ENV_SLUG/clearing/truststore.p12:/root/etc/truststore.p12
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/clearing-house-routes.xml:/root/deploy/clearing-house-routes.xml
     environment:
-        TC_DAPS_URL: https://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
-        TC_CH_ISSUER_CONNECTOR: https://clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
-        TC_CH_AGENT: https://clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
-    networks:
-      - mds-net
+        TC_DAPS_URL: http://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+        TC_CH_ISSUER_CONNECTOR: http://clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+        TC_CH_AGENT: http://clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
 
   keyring:
     image: ghcr.io/truzzt/truzztport/keyring:latest
@@ -102,8 +98,6 @@ services:
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/keyring/init_db:/server/init_db
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-keyring.toml:/server/Rocket.toml
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
-    networks:
-      - mds-net
 
   document:
     image: ghcr.io/truzzt/truzztport/document:latest
@@ -114,11 +108,11 @@ services:
     volumes:
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-document.toml:/server/Rocket.toml
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
-    networks:
-      - mds-net
 
   logging:
     image: ghcr.io/truzzt/truzztport/logging:latest
+    healthcheck:
+      disable: true
     depends_on:
         - document
         - keyring
@@ -128,8 +122,46 @@ services:
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-logging.toml:/server/Rocket.toml
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/keys:/server/keys
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
-    networks:
-      - mds-net
 
-networks:
-  mds-net:
+  connector:
+    image: ghcr.io/truzzt/test-connector:main
+    restart: always
+    healthcheck:
+      disable: true
+    depends_on:
+      - broker
+    environment:
+      WEB_HTTP_PORT: 13001
+      WEB_HTTP_PATH: /api
+      WEB_HTTP_DATA_PORT: 13002
+      WEB_HTTP_DATA_PATH: /api/v1/data
+      WEB_HTTP_IDS_PORT: 13003
+      WEB_HTTP_IDS_PATH: /api/v1/ids
+      WEB_HTTP_MANAGEMENT_PORT: 13004
+      WEB_HTTP_MANAGEMENT_PATH: /api/v1/management
+      EDC_IDS_ID: urn:connector:example-connector
+      EDC_IDS_TITLE: 'truzzt dev connector'
+      EDC_IDS_DESCRIPTION: 'Minimally configured Open Source EDC built by truzzt.'
+      EDC_IDS_ENDPOINT: http://connector.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/api/v1/ids
+      IDS_WEBHOOK_ADDRESS: http://connector.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+      EDC_IDS_CURATOR: https://truzzt.com
+      EDC_IDS_MAINTAINER: https://truzzt.com
+      EDC_CONNECTOR_NAME: truzzt-dev-connector
+      EDC_HOSTNAME: connector.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+      EDC_API_AUTH_KEY: ApiKeyDefaultValue
+      EDC_WEB_REST_CORS_ENABLED: 'true'
+      EDC_WEB_REST_CORS_HEADERS: 'origin,content-type,accept,authorization,x-api-key'
+      EDC_WEB_REST_CORS_ORIGINS: '*'
+      EDC_VAULT: /resources/connector/vault.properties
+      EDC_BROKER_BASE_URL: http://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+      EDC_CLEARINGHOUSE_LOG_URL: http://clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/messages/log
+      EDC_KEYSTORE: /resources/connector/keystore.jks
+      EDC_KEYSTORE_PASSWORD: password
+      EDC_OAUTH_PUBLIC_KEY_ALIAS: 1
+      EDC_OAUTH_PRIVATE_KEY_ALIAS: 1
+      EDC_OAUTH_CLIENT_ID: $TRUZZTPORT_CONNECTOR_SKI_AKI
+      EDC_OAUTH_TOKEN_URL: http://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/token
+      EDC_OAUTH_PROVIDER_JWKS_URL: http://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/jwks.json
+      EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
+    volumes:
+      - ../data/$TRUZZTPORT_ENV_SLUG/connector:/resources/connector

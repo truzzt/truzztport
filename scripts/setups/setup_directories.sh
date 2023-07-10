@@ -13,12 +13,14 @@ create_preset_directory_structure() {
         "data/$TRUZZTPORT_ENV_SLUG/daps/config"
         "data/$TRUZZTPORT_ENV_SLUG/daps/keys"
         "data/$TRUZZTPORT_ENV_SLUG/daps/keys/omejdn"
+        "data/$TRUZZTPORT_ENV_SLUG/daps/keys/clients"
         "data/$TRUZZTPORT_ENV_SLUG/broker"
         "data/$TRUZZTPORT_ENV_SLUG/mongo"
         "data/$TRUZZTPORT_ENV_SLUG/postgres"
         "data/$TRUZZTPORT_ENV_SLUG/proxy"
         "data/$TRUZZTPORT_ENV_SLUG/clearing"
         "data/$TRUZZTPORT_ENV_SLUG/clearing/keys"
+        "data/$TRUZZTPORT_ENV_SLUG/connector"
     )
 
     # Create directories

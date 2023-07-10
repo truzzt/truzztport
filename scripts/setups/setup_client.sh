@@ -46,7 +46,7 @@ cat >> "data/$TRUZZTPORT_ENV_SLUG/daps/config/clients.yml" <<EOF
     - key: securityProfile
       value: idsc:BASE_SECURITY_PROFILE
     - key: referringConnector
-      value: https://$client_name
+      value: http://$client_name
     - key: "@type"
       value: ids:DatPayload
     - key: "@context"
@@ -54,3 +54,5 @@ cat >> "data/$TRUZZTPORT_ENV_SLUG/daps/config/clients.yml" <<EOF
     - key: transportCertsSha256
       value: $CLIENT_CERT_SHA
 EOF
+
+cp data/cert/${client_name}.crt data/$TRUZZTPORT_ENV_SLUG/daps/keys/clients/${CLIENT_ID}.cert

@@ -5,83 +5,77 @@ services:
     image: traefik:v2.10
     ports:
       - 80:80
-      - 443:443
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ../data/${TRUZZTPORT_ENV_SLUG}/proxy:/certificates
     command:
       - --providers.docker=true
       - --entryPoints.web.address=:80
-      - --entryPoints.websecure.address=:443
       - --providers.docker.exposedbydefault=false
-      - --certificatesresolvers.le.acme.email=$TRUZZTPORT_LE_EMAIL
-      - --certificatesresolvers.le.acme.storage=/certificates/acme.json
-      - --certificatesresolvers.le.acme.tlschallenge=true
       - --api.dashboard=true
+      # - --log.level=DEBUG
+      - --accesslog=true
     labels:
       - traefik.enable=true
       - traefik.http.routers.dashboard.rule=Host(`traefik.dev.truzzt.com`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
       - traefik.http.routers.dashboard.service=api@internal
       - traefik.http.routers.dashboard.middlewares=auth
       - traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$sfMMH.Mj$$M3PtggBoBBG1cc8pGboD80
-    networks:
-      - traefik-public
 
   daps:
     labels:
       - traefik.enable=true
       - traefik.http.routers.daps-http.rule=Host(`daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
-      - traefik.http.routers.daps-https.rule=Host(`daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
-      - traefik.http.routers.daps-https.tls=true
-      - traefik.http.routers.daps-https.tls.certresolver=le
       - traefik.http.services.daps.loadbalancer.server.port=4567   
-    networks:
-      - traefik-public
 
   broker:
     labels:
       - traefik.enable=true
       # managment api
-      - traefik.http.routers.broker-managment-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api/v1/management`)
-      - traefik.http.routers.broker-managment-https.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api/v1/management`)
-      - traefik.http.routers.broker-managment-https.tls=true
-      - traefik.http.routers.broker-managment-https.tls.certresolver=le
-      - traefik.http.services.broker-managment-https.loadbalancer.server.port=13004
+      - traefik.http.routers.broker-management-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
+      - traefik.http.routers.broker-management-http.service=broker-management
+      - traefik.http.services.broker-management.loadbalancer.server.port=13004
 
       # ids api
       - traefik.http.routers.broker-ids-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api/v1/ids`)
-      - traefik.http.routers.broker-ids-https.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api/v1/ids`)
-      - traefik.http.routers.broker-ids-https.tls=true
-      - traefik.http.routers.broker-ids-https.tls.certresolver=le
-      - traefik.http.services.broker-ids-https.loadbalancer.server.port=13003
+      - traefik.http.routers.broker-ids-http.service=broker-ids
+      - traefik.http.services.broker-ids.loadbalancer.server.port=13003
 
       # data api
       - traefik.http.routers.broker-data-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api/v1/data`)
-      - traefik.http.routers.broker-data-https.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api/v1/data`)
-      - traefik.http.routers.broker-data-https.tls=true
-      - traefik.http.routers.broker-data-https.tls.certresolver=le
-      - traefik.http.services.broker-data-https.loadbalancer.server.port=13002
+      - traefik.http.routers.broker-data-http.service=broker-data
+      - traefik.http.services.broker-data.loadbalancer.server.port=13002
 
       # api
-      - traefik.http.routers.broker-api-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api`)
-      - traefik.http.routers.broker-api-https.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api`)
-      - traefik.http.routers.broker-api-https.tls=true
-      - traefik.http.routers.broker-api-https.tls.certresolver=le
-      - traefik.http.services.broker-api-https.loadbalancer.server.port=13001
-    networks:
-      - traefik-public
+      # - traefik.http.routers.broker-api-http.rule=Host(`broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api`)
+      # - traefik.http.routers.broker-api-http.service=broker-api
+      # - traefik.http.services.broker-api.loadbalancer.server.port=13001
 
   tc-core:
     labels:
       - traefik.enable=true
       - traefik.http.routers.clearing-http.rule=Host(`clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
-      - traefik.http.routers.clearing-https.rule=Host(`clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`)
-      - traefik.http.routers.clearing-https.tls=true
-      - traefik.http.routers.clearing-https.tls.certresolver=le
       - traefik.http.services.clearing.loadbalancer.server.port=9999
-    networks:
-      - traefik-public
 
-networks:
-  traefik-public:
-    external: true
+  connector:
+    labels:
+      - traefik.enable=true
+      # management api
+      - traefik.http.routers.connector-management-http.rule=Host(`connector.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api/v1/management`)
+      - traefik.http.routers.connector-management-http.service=connector-management
+      - traefik.http.services.connector-management.loadbalancer.server.port=13004
+
+      # ids api
+      - traefik.http.routers.connector-ids-http.rule=Host(`connector.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api/v1/ids`) || PathPrefix(`//api/v1/ids`)
+      - traefik.http.routers.connector-ids-http.service=connector-ids
+      - traefik.http.services.connector-ids.loadbalancer.server.port=13003
+
+      # data api
+      - traefik.http.routers.connector-data-http.rule=Host(`connector.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api/v1/data`)
+      - traefik.http.routers.connector-data-http.service=connector-data
+      - traefik.http.services.connector-data.loadbalancer.server.port=13002
+
+      # api
+      - traefik.http.routers.connector-api-http.rule=Host(`connector.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN`) && PathPrefix(`/api`)
+      - traefik.http.routers.connector-api-http.service=connector-api
+      - traefik.http.services.connector-api.loadbalancer.server.port=13001
