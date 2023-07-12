@@ -36,5 +36,5 @@ echo "$vault_contents" > $PWD/data/$TRUZZTPORT_ENV_SLUG/connector/vault.properti
 
 
 # Generate client certificate
-source scripts/setups/setup_client.sh "connector.$common_name_subca" "$country_name" "$organization_name" "$unit_name"
-cp $PWD/data/cert/${client_name}.jks $PWD/data/$TRUZZTPORT_ENV_SLUG/connector/keystore.jks
+source scripts/setups/setup_client.sh "$TRUZZTPORT_CONNECTOR_DOMAIN" "$TRUZZTPORT_CA_COUNTRY_NAME" "$TRUZZTPORT_CA_ORGANIZATION_NAME" "$TRUZZTPORT_CA_UNIT_NAME"
+cp $PWD/data/cert/${TRUZZTPORT_CONNECTOR_DOMAIN}.jks $PWD/data/$TRUZZTPORT_ENV_SLUG/connector/keystore.jks

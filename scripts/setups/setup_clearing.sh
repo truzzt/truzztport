@@ -4,13 +4,6 @@
 # Author: truzzt GmbH
 # Copyright 2023
 
-# Set environment variables
-common_name_subca="$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_CA_COMMON_NAME"
-common_name="$TRUZZTPORT_CA_COMMON_NAME"
-organization_name="$TRUZZTPORT_CA_ORGANIZATION_NAME"
-country_name="$TRUZZTPORT_CA_COUNTRY_NAME"
-unit_name="$TRUZZTPORT_CA_UNIT_NAME"
-
 # Define the allow-all-flow.pl contents
 allow_all_flows_contents=$(cat <<EOL
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -208,7 +201,7 @@ EOL
 document_rocket_contents=$(cat <<EOL
 [global]
 limits = { json = 5242880 }
-daps_api_url = "https://daps.$common_name_subca"
+daps_api_url = "https://$TRUZZTPORT_DAPS_DOMAIN"
 
 [debug]
 address = "0.0.0.0"
@@ -234,7 +227,7 @@ EOL
 keyring_rocket_contents=$(cat <<EOL
 [global]
 limits = { json = 5242880 }
-daps_api_url = "https://daps.$common_name_subca"
+daps_api_url = "https://$TRUZZTPORT_DAPS_DOMAIN"
 
 [debug]
 address = "0.0.0.0"
@@ -258,10 +251,10 @@ EOL
 logging_rocket_contents=$(cat <<EOL
 [global]
 limits = { json = 5242880 }
-daps_api_url = "https://daps.$common_name_subca"
-connector_name = "https://clearing.$common_name_subca"
+daps_api_url = "https://$TRUZZTPORT_DAPS_DOMAIN"
+connector_name = "https://$TRUZZTPORT_CLEARING_DOMAIN"
 infomodel_version = "4.0.0"
-server_agent = "https://clearing.$common_name_subca"
+server_agent = "https://$TRUZZTPORT_CLEARING_DOMAIN"
 signing_key = "keys/private_key.der"
 
 [debug]
@@ -294,5 +287,5 @@ echo "$keyring_rocket_contents" > $PWD/data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket
 echo "$logging_rocket_contents" > $PWD/data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-logging.toml
 
 # Generate client certificate
-source scripts/setups/setup_client.sh "clearing.$common_name_subca" "$country_name" "$organization_name" "$unit_name"
-cp $PWD/data/cert/${client_name}.p12 $PWD/data/$TRUZZTPORT_ENV_SLUG/clearing/keystore.p12
+source scripts/setups/setup_client.sh "$TRUZZTPORT_CLEARING_DOMAIN" "$TRUZZTPORT_CA_COUNTRY_NAME" "$TRUZZTPORT_CA_ORGANIZATION_NAME" "$TRUZZTPORT_CA_UNIT_NAME"
+cp $PWD/data/cert/${TRUZZTPORT_CLEARING_DOMAIN}.p12 $PWD/data/$TRUZZTPORT_ENV_SLUG/clearing/keystore.p12

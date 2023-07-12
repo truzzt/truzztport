@@ -7,14 +7,13 @@
 source scripts/load_environment.sh
 
 # Set environment variables
-common_name_subca="$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_CA_COMMON_NAME"
 client_name="$1"
 country_name="$2"
 organization_name="$3"
 unit_name="$4"
 
 # Generate client certificate
-python3 ca/pki.py cert create --subCA "$common_name_subca" --common-name "$client_name" --algo rsa --bits 2048 --hash sha256 --country-name "$country_name" --organization-name "$organization_name" --unit-name "$unit_name" --server --client --san-name "$client_name" --san-ip 127.0.0.1
+python3 ca/pki.py cert create --subCA "$TRUZZTPORT_CA_SUBCA" --common-name "$client_name" --algo rsa --bits 2048 --hash sha256 --country-name "$country_name" --organization-name "$organization_name" --unit-name "$unit_name" --server --client --san-name "$client_name" --san-ip 127.0.0.1
 
 # Export client certificate as PKCS12 format
 CLIENT_CERT="data/cert/$client_name.crt"
