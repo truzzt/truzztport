@@ -1,6 +1,6 @@
 # Welcome to truzztport 👋
 ![Version](https://img.shields.io/badge/version-0.0.1-blue.svg?cacheSeconds=2592000)
-[![Documentation](https://img.shields.io/badge/documentation-yes-brightgreen.svg)](doc.truzzt.com)
+[![Documentation Status](https://readthedocs.org/projects/truzztport/badge/?version=latest)](https://truzztport.readthedocs.io/en/latest/?badge=latest)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache2.0-yellow.svg)](/LICENSE)
 
 > Fully configurable dataspace setup
