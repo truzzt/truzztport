@@ -21,12 +21,6 @@ bash scripts/init.sh
 Run bash scripts/add_environment.sh to add a new environment and run bash scripts/start.sh to start an environment
 ```
 
-## Author
-
-👤 **D.Hommen**
-
-* Github: [@dhommen](https://github.com/dhommen)
-
 ## 🤝 Contributing
 
 Contributions, issues and feature requests are welcome!
