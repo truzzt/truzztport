@@ -9,6 +9,10 @@
 
 ### ✨ [Demo](demo.truzztport.com)
 
+## Configure
+Edit ```.env``` to your needs. 
+For a localhost deployment set ```TRUZZTPORT_ENV_SLUG=local``` and ```TRUZZTPORT_BASE_DOMAIN=<YOUR_LOCAL_IP>```
+
 ## Install
 
 ```sh
