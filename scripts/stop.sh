@@ -1,3 +1,8 @@
 #!/bin/bash
+#
+# Shell Script to stop 
+# Author: truzzt GmbH
+# Copyright 2023
 
-docker compose -f docker/docker-compose.yml --env-file config/.env down
+source scripts/load_environment.sh
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.traefik.yml down

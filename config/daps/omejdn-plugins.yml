@@ -1,3 +1,0 @@
-plugins:
-  token_user_attributes:
-    skip_id_token: true

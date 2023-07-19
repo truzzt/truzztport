@@ -1,81 +1,167 @@
 version: "3.8"
 
 services:
-  proxy:
-    image: nginx:1.21.6
-    volumes:
-      - ../config/proxy/nginx.conf:/etc/nginx/templates/default.conf.template
-    ports:
-      - 13000:13000
-      - 13001:13001
-      - 13002:13002
-      - 13003:13003
-      - 13004:13004
-
-  broker-core:
-    image: ghcr.io/truzzt/mds-broker-core:5.0.3
-    environment:
-      - SPARQL_ENDPOINT=http://fuseki:3030/connectorData
-      - ELASTICSEARCH_HOSTNAME=elastic
-      - SHACL_VALIDATION=true
-      - DAPS_VALIDATE_INCOMING=false
-      - IDENTITY_JAVAKEYSTORE=/etc/cert/keystore.jks
-      - COMPONENT_URI=$BROKER_CORE_COMPONENT_URI
-      - COMPONENT_CATALOGURI=$BROKER_CORE_COMPONENT_CATALOGURI
-      - DAPS_URL=http://217.72.203.88:13000/token
+  broker:
+    image: ghcr.io/truzzt/federated-catalog:image-v0.0.4
+    restart: always
+    healthcheck:
+      disable: true
     depends_on:
-      - elastic
-      - fuseki
-    volumes:
-      - ../data/cert/broker.local.jks:/etc/cert/keystore.jks
-
-  fuseki:
-    image: registry.gitlab.cc-asp.fraunhofer.de/eis-ids/broker-open/fuseki
-    volumes:
-      - fuseki-data:/fuseki
-
-  elastic:
-    image: elasticsearch:7.16.2
+      - postgres
     environment:
-      - http.port=9200
-      - discovery.type=single-node
-    volumes:      
-      - elastic-data:/usr/share/elasticsearch/data
+      WEB_HTTP_PORT: 13001
+      WEB_HTTP_PATH: /api
+      WEB_HTTP_DATA_PORT: 13002
+      WEB_HTTP_DATA_PATH: /api/v1/data
+      WEB_HTTP_IDS_PORT: 13003
+      WEB_HTTP_IDS_PATH: /api/v1/ids
+      WEB_HTTP_MANAGEMENT_PORT: 13004
+      WEB_HTTP_MANAGEMENT_PATH: /
+      EDC_IDS_ID: urn:connector:broker
+      EDC_IDS_TITLE: 'truzzt IDS BaseCamp Broker'
+      EDC_IDS_DESCRIPTION: "Truzzt's IDS BaseCamp Broker"
+      EDC_IDS_ENDPOINT: http://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/api/v1/ids
+      IDS_WEBHOOK_ADDRESS: http://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+      EDC_IDS_CURATOR: http://truzzt.com
+      EDC_IDS_MAINTAINER: http://truzzt.com
+      EDC_CONNECTOR_NAME: truzzt-example-connector
+      EDC_HOSTNAME: broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+      EDC_API_AUTH_KEY: ApiKeyDefaultValue
+      EDC_WEB_REST_CORS_ENABLED: 'true'
+      EDC_WEB_REST_CORS_HEADERS: 'origin,content-type,accept,authorization,x-api-key'
+      EDC_WEB_REST_CORS_ORIGINS: '*'
+      EDC_FLYWAY_REPAIR: 'false'
+      EDC_DATASOURCE_DEFAULT_URL: 'jdbc:postgresql://postgres:5432/broker'
+      EDC_DATASOURCE_DEFAULT_USER: 'postgres'
+      EDC_DATASOURCE_DEFAULT_PASSWORD: 'password'
+      EDC_VAULT: /resources/vault/broker/vault.properties
+      EDC_KEYSTORE: /resources/vault/broker/keystore.jks
+      EDC_KEYSTORE_PASSWORD: password
+      EDC_OAUTH_CERTIFICATE_ALIAS: 1
+      EDC_OAUTH_PRIVATE_KEY_ALIAS: 1
+      EDC_OAUTH_CLIENT_ID: $TRUZZTPORT_BROKER_SKI_AKI
+      EDC_OAUTH_TOKEN_URL: http://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/token
+      EDC_OAUTH_PROVIDER_JWKS_URL: http://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/jwks.json
+      EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
+
+      EDC_CATALOG_CACHE_EXECUTION_DELAY_SECONDS: 5
+      EDC_CATALOG_CACHE_EXECUTION_PERIOD_SECONDS: 5
+      EDC_CATALOG_CACHE_PARTITION_NUM_CRAWLERS: 60
+    volumes:
+      - ../data/$TRUZZTPORT_ENV_SLUG/broker:/resources/vault/broker
+
+  postgres:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: broker
+    volumes:
+      - ../data/$TRUZZTPORT_ENV_SLUG/postgres:/var/lib/postgresql/data
 
   mongo:
     image: mongo:latest
     volumes:
-      - mongo-data:/data/db
+      - ../data/$TRUZZTPORT_ENV_SLUG/mongo:/data/db
 
-  # broker-backend:
-  #   image: registry.gitlab.cc-asp.fraunhofer.de/eis-ids/broker/mongodb-handler:5.0.2-DF
-  #   environment:
-  #     - MONGODB_ENDPOINT=mongodb://mongo:27017/users
-  #     - JWT_SECRET=$BROKER_BACKEND_JWT_SECRET
-  #     - ADMIN_PASSWORD=$ADMIN_PASSWORD
-  #     - BROKER_URL=http://broker-core:8080
-  #   depends_on:
-  #     - mongo
-  
-  # broker-frontend:
-  #   image: registry.gitlab.cc-asp.fraunhofer.de/eis-ids/broker/frontend-mobids:5.0.2-DF
-  #   environment:
-  #     - REACT_APP_BROKER_URL=http://localhost:13002
-
-  daps-core:
+  daps:
     image: ghcr.io/fraunhofer-aisec/omejdn-server:1.7.1
     environment:
       - OMEJDN_OPENID=true
       - OMEJDN_ACCEPT_AUDIENCE=idsc:IDS_CONNECTORS_ALL
       - OMEJDN_DEFAULT_AUDIENCE=idsc:IDS_CONNECTORS_ALL
-      - OMEJDN_ADMIN=${DAPS_ADMIN_USERNAME}:${ADMIN_PASSWORD}
+      - OMEJDN_ADMIN=${TRUZZTPORT_ADMIN_USERNAME}:${TRUZZTPORT_ADMIN_PASSWORD}
     volumes:
-      - ../data/daps/clients.yml:/opt/config/clients.yml
-      - ../config/daps:/opt/config
-      - ../data/daps/clients/:/opt/keys/clients
-      - ../data/cert/daps.local.key:/opt/keys/omejdn/omejdn.key
+      - ../data/$TRUZZTPORT_ENV_SLUG/daps/config/:/opt/config/
+      - ../data/$TRUZZTPORT_ENV_SLUG/daps/keys:/opt/keys/
 
-volumes:
-  mongo-data:
-  fuseki-data:
-  elastic-data:
+  tc-core:
+    image: ghcr.io/truzzt/truzztport/clearing:latest
+    # tty: true
+    # stdin_open: true
+    volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/allow-all-flows.pl:/root/deploy/allow-all-flows.pl
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/keystore.p12:/root/etc/keystore.p12
+        # - ../data/$TRUZZTPORT_ENV_SLUG/clearing/truststore.p12:/root/etc/truststore.p12
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/clearing-house-routes.xml:/root/deploy/clearing-house-routes.xml
+    environment:
+        TC_DAPS_URL: http://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+        TC_CH_ISSUER_CONNECTOR: http://clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+        TC_CH_AGENT: http://clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+
+  keyring:
+    image: ghcr.io/truzzt/truzztport/keyring:latest
+    environment:
+        - API_LOG_LEVEL=Info
+    volumes:
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/keyring/init_db:/server/init_db
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-keyring.toml:/server/Rocket.toml
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
+
+  document:
+    image: ghcr.io/truzzt/truzztport/document:latest
+    depends_on:
+        - keyring
+    environment:
+        - API_LOG_LEVEL=Info
+    volumes:
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-document.toml:/server/Rocket.toml
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
+
+  logging:
+    image: ghcr.io/truzzt/truzztport/logging:latest
+    healthcheck:
+      disable: true
+    depends_on:
+        - document
+        - keyring
+    environment:
+        - API_LOG_LEVEL=Debug
+    volumes:
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-logging.toml:/server/Rocket.toml
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/keys:/server/keys
+        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
+
+  connector:
+    image: ghcr.io/truzzt/test-connector:main
+    restart: always
+    healthcheck:
+      disable: true
+    depends_on:
+      - broker
+    environment:
+      WEB_HTTP_PORT: 13001
+      WEB_HTTP_PATH: /api
+      WEB_HTTP_DATA_PORT: 13002
+      WEB_HTTP_DATA_PATH: /api/v1/data
+      WEB_HTTP_IDS_PORT: 13003
+      WEB_HTTP_IDS_PATH: /api/v1/ids
+      WEB_HTTP_MANAGEMENT_PORT: 13004
+      WEB_HTTP_MANAGEMENT_PATH: /api/v1/management
+      EDC_IDS_ID: urn:connector:example-connector
+      EDC_IDS_TITLE: 'truzzt dev connector'
+      EDC_IDS_DESCRIPTION: 'Minimally configured Open Source EDC built by truzzt.'
+      EDC_IDS_ENDPOINT: http://connector.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/api/v1/ids
+      IDS_WEBHOOK_ADDRESS: http://connector.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+      EDC_IDS_CURATOR: https://truzzt.com
+      EDC_IDS_MAINTAINER: https://truzzt.com
+      EDC_CONNECTOR_NAME: truzzt-dev-connector
+      EDC_HOSTNAME: connector.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+      EDC_API_AUTH_KEY: ApiKeyDefaultValue
+      EDC_WEB_REST_CORS_ENABLED: 'true'
+      EDC_WEB_REST_CORS_HEADERS: 'origin,content-type,accept,authorization,x-api-key'
+      EDC_WEB_REST_CORS_ORIGINS: '*'
+      EDC_VAULT: /resources/connector/vault.properties
+      EDC_BROKER_BASE_URL: http://broker.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN
+      EDC_CLEARINGHOUSE_LOG_URL: http://clearing.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/messages/log
+      EDC_KEYSTORE: /resources/connector/keystore.jks
+      EDC_KEYSTORE_PASSWORD: password
+      EDC_OAUTH_PUBLIC_KEY_ALIAS: 1
+      EDC_OAUTH_PRIVATE_KEY_ALIAS: 1
+      EDC_OAUTH_CLIENT_ID: $TRUZZTPORT_CONNECTOR_SKI_AKI
+      EDC_OAUTH_TOKEN_URL: http://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/token
+      EDC_OAUTH_PROVIDER_JWKS_URL: http://daps.$TRUZZTPORT_ENV_SLUG.$TRUZZTPORT_BASE_DOMAIN/jwks.json
+      EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
+    volumes:
+      - ../data/$TRUZZTPORT_ENV_SLUG/connector:/resources/connector

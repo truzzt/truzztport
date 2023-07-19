@@ -16,4 +16,4 @@ CONNECTOR_AKI="$(openssl x509 -in "data/cert/connector.dev.truzzt.com.crt" -noou
 export TRUZZTPORT_BROKER_SKI_AKI=$BROKER_SKI:$BROKER_AKI
 export TRUZZTPORT_CONNECTOR_SKI_AKI=$CONNECTOR_SKI:$CONNECTOR_AKI
 
-docker compose -f docker/docker-compose.yml -f docker/docker-compose.traefik.yml up -d
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.traefik.yml -f docker/docker-compose.debug.yml up -d
