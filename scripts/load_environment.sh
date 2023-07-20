@@ -5,7 +5,7 @@
 # Copyright 2023
 
 # Function to read .env file and export variables
-if [ ! "${TRUZZTPORT_ENV_SET}" ]; then
+
   read_env_file() {
       local env_file="$1"
 
@@ -20,10 +20,9 @@ if [ ! "${TRUZZTPORT_ENV_SET}" ]; then
               # Skip empty lines and comments
               if [[ -n "$key" && ! "$key" =~ ^# ]]; then
                   export "$key"="$value"
+                  echo SET $key=${!key}
               fi
           done < "$env_file"
-
-          echo "Environment variables loaded from $env_file."
       else
           echo "Could not find $env_file."
       fi
@@ -36,15 +35,15 @@ if [ ! "${TRUZZTPORT_ENV_SET}" ]; then
     local port_variable_name=$3
     local prefix_variable_name=$4
     
-    if [ -n "${!subdomain_variable_name}" ]; then
+    if [ -n "$2" ] && [ -n "${!subdomain_variable_name}" ]; then
         local subdomain="${!subdomain_variable_name}."
     fi
     
-    if [ -n "${!port_variable_name}" ]; then
+    if [ -n "$3" ] && [ -n "${!port_variable_name}" ]; then
         local port=":${!port_variable_name}"
     fi
     
-    if [ -n "${!prefix_variable_name}" ]; then
+    if [ -n "$4" ] && [ -n "${!prefix_variable_name}" ]; then
         local prefix="${!prefix_variable_name}"
     fi
 
@@ -54,7 +53,7 @@ if [ ! "${TRUZZTPORT_ENV_SET}" ]; then
         export "$variable_name"="${subdomain}${env_slug}${TRUZZTPORT_DOMAIN}${port}${prefix}"
     fi
 
-    if [ -n "${TRUZZTPORT_DEBUG}" ]; then
+    if [ "TRUZZTPORT_ENV_SLUG" = "local" ]; then
         echo SET "$variable_name"="${TRUZZTPORT_DOMAIN}${port}${prefix}"
     else
         echo SET "$variable_name"="${subdomain}${env_slug}${TRUZZTPORT_DOMAIN}${port}${prefix}"
@@ -89,8 +88,4 @@ if [ ! "${TRUZZTPORT_ENV_SET}" ]; then
   for entry in "${domain_variables[@]}"; do
       set_domain_variable $entry
   done
-
-
-  export TRUZZTPORT_ENV_SET=true
-fi
 

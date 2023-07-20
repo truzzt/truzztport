@@ -4,6 +4,8 @@
 # Author: truzzt GmbH
 # Copyright 2023
 
+set -e
+
 source scripts/check_dependencies.sh
 source scripts/load_environment.sh
 source scripts/setups/setup_ca.sh
