@@ -5,7 +5,6 @@
 # Copyright 2023
 
 if [ $# -eq 1 ]; then
-  echo "Got Argument $1"
 
   # Check if the .env file exists
   ENV_FILE=".env"
@@ -29,3 +28,6 @@ source scripts/setups/setup_daps.sh
 source scripts/setups/setup_broker.sh
 source scripts/setups/setup_clearing.sh
 source scripts/setups/setup_connector.sh
+
+# Get all exported variables with the "TRUZZTPORT" prefix from the environment
+env | grep -E '^TRUZZTPORT_[a-zA-Z_][a-zA-Z0-9_]*=' | sed 's/^TRUZZTPORT_//' >> "data/.$TRUZZTPORT_ENV_SLUG.env"

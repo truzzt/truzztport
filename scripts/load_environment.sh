@@ -7,6 +7,7 @@
 # Function to read .env file and export variables
 
   read_env_file() {
+      echo "LOADING $1 ..."
       local env_file="$1"
 
       # Check if .env file exists
@@ -60,6 +61,13 @@
     fi
   }
 
+
+
+if [ $# -eq 1 ]; then
+  env_file="data/.$1.env"
+else
+  env_file=".env"
+fi
   # Specify the path to your .env file
   env_file=".env"
 
@@ -82,6 +90,8 @@
     "TRUZZTPORT_CLEARING_DOMAIN TRUZZTPORT_CLEARING_SUBDOMAIN TRUZZTPORT_CLEARING_PORT"
     "TRUZZTPORT_CA_SUBCA"
   )
+
+  export COMPOSE_PROJECT_NAME=$TRUZZTPORT_NAME-$TRUZZTPORT_ENV_SLUG
 
   # Set domain variables
   env_slug="${TRUZZTPORT_ENV_SLUG}."
