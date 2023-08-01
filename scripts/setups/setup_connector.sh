@@ -38,3 +38,8 @@ echo "$vault_contents" > $PWD/data/$TRUZZTPORT_ENV_SLUG/connector/vault.properti
 # Generate client certificate
 source scripts/setups/setup_client.sh "$TRUZZTPORT_CONNECTOR_DOMAIN" "$TRUZZTPORT_CA_COUNTRY_NAME" "$TRUZZTPORT_CA_ORGANIZATION_NAME" "$TRUZZTPORT_CA_UNIT_NAME"
 cp $PWD/data/cert/${TRUZZTPORT_CONNECTOR_DOMAIN}.jks $PWD/data/$TRUZZTPORT_ENV_SLUG/connector/keystore.jks
+
+CONNECTOR_SKI="$(openssl x509 -in "data/cert/$TRUZZTPORT_CONNECTOR_DOMAIN.crt" -noout -text | awk '/Subject Key Identifier/ {getline; print}' | tr -d ' ')"
+CONNECTOR_AKI="$(openssl x509 -in "data/cert/$TRUZZTPORT_CONNECTOR_DOMAIN.crt" -noout -text | awk '/Authority Key Identifier/ {getline; print}' | tr -d ' ')"
+
+export TRUZZTPORT_CONNECTOR_SKI_AKI=$CONNECTOR_SKI:$CONNECTOR_AKI
