@@ -1,8 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Shell Script to setup a client
 # Author: truzzt GmbH
 # Copyright 2023
+
+set -e  # Enable error handling
 
 source scripts/load_environment.sh
 
@@ -16,7 +18,7 @@ unit_name="$4"
 python3 ca/pki.py cert create --subCA "$TRUZZTPORT_CA_SUBCA" --common-name "$client_name" --algo rsa --bits 2048 --hash sha256 --country-name "$country_name" --organization-name "$organization_name" --unit-name "$unit_name" --server --client --san-name "$client_name"
 
 # Export client certificate as PKCS12 format
-CLIENT_CERT="data/cert/$client_name.crt"
+CLIENT_CERT="data/cert/${client_name}.crt"
 openssl pkcs12 -export -in "$CLIENT_CERT" -inkey "data/cert/${client_name}.key" -out "data/cert/${client_name}.p12" -password pass:password
 
 # Import PKCS12 keystore to JKS format
@@ -45,7 +47,7 @@ cat >> "data/$TRUZZTPORT_ENV_SLUG/daps/config/clients.yml" <<EOF
     - key: securityProfile
       value: idsc:BASE_SECURITY_PROFILE
     - key: referringConnector
-      value: http://$client_name
+      value: https://$client_name
     - key: "@type"
       value: ids:DatPayload
     - key: "@context"
@@ -54,4 +56,4 @@ cat >> "data/$TRUZZTPORT_ENV_SLUG/daps/config/clients.yml" <<EOF
       value: $CLIENT_CERT_SHA
 EOF
 
-cp data/cert/${client_name}.crt data/$TRUZZTPORT_ENV_SLUG/daps/keys/clients/${CLIENT_ID}.cert
+cp "data/cert/${client_name}.crt" "data/$TRUZZTPORT_ENV_SLUG/daps/keys/clients/${CLIENT_ID}.cert"

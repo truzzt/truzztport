@@ -30,3 +30,8 @@ echo "$vault_contents" > $PWD/data/$TRUZZTPORT_ENV_SLUG/broker/vault.properties
 # Generate client certificate
 source scripts/setups/setup_client.sh "$TRUZZTPORT_BROKER_DOMAIN" "$TRUZZTPORT_CA_COUNTRY_NAME" "$TRUZZTPORT_CA_ORGANIZATION_NAME" "$TRUZZTPORT_CA_UNIT_NAME"
 cp $PWD/data/cert/${TRUZZTPORT_BROKER_DOMAIN}.jks $PWD/data/$TRUZZTPORT_ENV_SLUG/broker/keystore.jks
+
+BROKER_SKI="$(openssl x509 -in "data/cert/$TRUZZTPORT_BROKER_DOMAIN.crt" -noout -text | awk '/Subject Key Identifier/ {getline; print}' | tr -d ' ')"
+BROKER_AKI="$(openssl x509 -in "data/cert/$TRUZZTPORT_BROKER_DOMAIN.crt" -noout -text | awk '/Authority Key Identifier/ {getline; print}' | tr -d ' ')"
+
+export TRUZZTPORT_BROKER_SKI_AKI=$BROKER_SKI:$BROKER_AKI
