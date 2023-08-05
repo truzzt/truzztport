@@ -8,18 +8,12 @@ set -e
 
 # Check if the script is called with one or two arguments
 if [ $# -lt 1 ] || [ $# -gt 2 ]; then
-  echo "Usage: $0 start|stop|init|add [ENV_NAME]"
+  echo "Usage: $0 init|add|start|stop|debug"
   exit 1
 fi
 
-# Set the ACTION variable based on the input
+# Set the COMMAND variable based on the input
 case "$1" in
-  start)
-    ACTION="up -d"
-    ;;
-  stop)
-    ACTION="down"
-    ;;
   init)
     source scripts/check_dependencies.sh
     source scripts/load_environment.sh
@@ -27,7 +21,6 @@ case "$1" in
     exit 0
     ;;
   add)
-
     ENV_FILE=".env"
 
     # Check the value of the OSTYPE variable
@@ -38,8 +31,6 @@ case "$1" in
     else
       echo "Unsupported operating system"
     fi
-
-
 
     source scripts/load_environment.sh
     source scripts/setups/setup_directories.sh
@@ -53,12 +44,22 @@ case "$1" in
     env | grep -E '^TRUZZTPORT_[a-zA-Z_][a-zA-Z0-9_]*=' | sed 's/^//' >> "data/.$TRUZZTPORT_ENV_SLUG.env"
     exit 0
     ;;
+  start)
+    COMMAND="up -d"
+    ;;
+  stop)
+    COMMAND="down"
+    ;;
+  debug)
+    COMMAND="up"
+    ;;
   *)
-    echo "Invalid action. Use 'start' or 'stop'."
+    echo "Invalid action. Use init|add|start|stop|debug"
     exit 1
     ;;
 esac
 
+ACTION="$1"
 ENV_NAME="$2"
 
 # Check if the environment name is provided
@@ -80,5 +81,10 @@ else
   COMPOSE_FILE+=" -f docker/docker-compose.traefik.yml"
 fi
 
+# Determine if enables the debug ports
+if [ "$ACTION" = "debug" ]; then
+  COMPOSE_FILE+=" -f docker/docker-compose.debug.yml"
+fi
+
 # Perform the specified action
-docker compose $COMPOSE_FILE $ACTION 
+docker compose -p truzztport $COMPOSE_FILE $COMMAND 

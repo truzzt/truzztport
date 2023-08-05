@@ -8,6 +8,10 @@ services:
       - $TRUZZTPORT_BROKER_DATA_PORT:13002
       - $TRUZZTPORT_BROKER_API_PORT:13001
 
+  postgres:
+    ports:
+      - $TRUZZTPORT_POSTGRES_PORT:5432
+
   daps:
     ports:
       - $TRUZZTPORT_DAPS_PORT:4567

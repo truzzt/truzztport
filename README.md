@@ -16,13 +16,13 @@ For a localhost deployment set ```TRUZZTPORT_ENV_SLUG=local``` and ```TRUZZTPORT
 ## Install
 
 ```sh
-bash scripts/init.sh
+bash scripts/truzzport.sh init
 ```
 
 ## Usage
 
 ```sh
-Run bash scripts/add_environment.sh to add a new environment and run bash scripts/start.sh to start an environment
+Run bash scripts/truzzport.sh add [ENV_NAME] to add a new environment and run bash scripts/truzzport.sh start [ENV_NAME] to start an environment
 ```
 
 ## 🤝 Contributing

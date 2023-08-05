@@ -7,7 +7,7 @@ services:
       - "-c"
       - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar fc.jar"
     ports:
-      - 5005:5005
+      - $TRUZZTPORT_BROKER_DEBUG_PORT:5005
   
   connector: 
     entrypoint:
@@ -15,4 +15,4 @@ services:
       - "-c"
       - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar mds_edc.jar"
     ports:
-      - 5006:5005
+      - $TRUZZTPORT_CONNECTOR_DEBUG_PORT:5005

@@ -54,7 +54,7 @@
         export "$variable_name"="${subdomain}${env_slug}${TRUZZTPORT_DOMAIN}${port}${prefix}"
     fi
 
-    if [ "TRUZZTPORT_ENV_SLUG" = "local" ]; then
+    if [ "$TRUZZTPORT_ENV_SLUG" = "local" ]; then
         echo SET "$variable_name"="${TRUZZTPORT_DOMAIN}${port}${prefix}"
     else
         echo SET "$variable_name"="${subdomain}${env_slug}${TRUZZTPORT_DOMAIN}${port}${prefix}"
