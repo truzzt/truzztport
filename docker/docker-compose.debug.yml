@@ -3,16 +3,18 @@ version: "3.8"
 services:
   broker:
     entrypoint:
-      -  "sh"
+      - "sh"
       - "-c"
-      - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar fc.jar"
+      - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Xms256M -Xmx1G -XX:MaxMetaspaceSize=128M -XX:+UseG1GC -jar fc.jar"
     ports:
       - $TRUZZTPORT_BROKER_DEBUG_PORT:5005
-  
+      - $TRUZZTPORT_BROKER_JMX_PORT:9010
+
   connector: 
     entrypoint:
-      -  "sh"
+      - "sh"
       - "-c"
-      - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar mds_edc.jar"
+      - "exec timeout -s INT 5m java -Djava.util.logging.config.file=/app/logging.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false  -Xms256M -Xmx1G -XX:MaxMetaspaceSize=128M -XX:+UseG1GC -jar mds_edc.jar"
     ports:
       - $TRUZZTPORT_CONNECTOR_DEBUG_PORT:5005
+      - $TRUZZTPORT_CONNECTOR_JMX_PORT:9010
