@@ -8,7 +8,7 @@ set -e
 
 # Check if the script is called with one or two arguments
 if [ $# -lt 1 ] || [ $# -gt 2 ]; then
-  echo "Usage: $0 init|add|start|stop|debug"
+  echo "Usage: $0 init|add|start|stop|debug|clean"
   exit 1
 fi
 
@@ -53,8 +53,12 @@ case "$1" in
   debug)
     COMMAND="up"
     ;;
+  clean)
+    sudo rm -rf ./data
+    exit 0
+    ;;
   *)
-    echo "Invalid action. Use init|add|start|stop|debug"
+    echo "Invalid action. Use init|add|start|stop|debug|clean"
     exit 1
     ;;
 esac

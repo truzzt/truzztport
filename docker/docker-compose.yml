@@ -2,12 +2,12 @@ version: "3.8"
 
 services:
   broker:
-    image: ghcr.io/truzzt/federated-catalog:image-v0.0.4
+    image: ghcr.io/truzzt/federated-catalog:image-v0.0.6
     restart: always
     healthcheck:
       disable: true
     depends_on:
-      - postgres
+      - postgres-broker
     environment:
       WEB_HTTP_PORT: 13001
       WEB_HTTP_PATH: /api
@@ -31,9 +31,10 @@ services:
       EDC_WEB_REST_CORS_HEADERS: 'origin,content-type,accept,authorization,x-api-key'
       EDC_WEB_REST_CORS_ORIGINS: '*'
       EDC_FLYWAY_REPAIR: 'false'
-      EDC_DATASOURCE_DEFAULT_URL: 'jdbc:postgresql://postgres:5432/broker'
-      EDC_DATASOURCE_DEFAULT_USER: 'postgres'
-      EDC_DATASOURCE_DEFAULT_PASSWORD: 'password'
+      EDC_DATASOURCE_DEFAULT_URL: 'jdbc:postgresql://postgres-broker:5432/broker'
+      EDC_DATASOURCE_DEFAULT_USER: postgres
+      EDC_DATASOURCE_DEFAULT_PASSWORD: password
+      EDC_DATASOURCE_DEFAULT_MAX_POOL_SIZE: 10
       EDC_VAULT: /resources/vault/broker/vault.properties
       EDC_KEYSTORE: /resources/vault/broker/keystore.jks
       EDC_KEYSTORE_PASSWORD: password
@@ -43,21 +44,20 @@ services:
       EDC_OAUTH_TOKEN_URL: http://$TRUZZTPORT_DAPS_DOMAIN/token
       EDC_OAUTH_PROVIDER_JWKS_URL: http://$TRUZZTPORT_DAPS_DOMAIN/jwks.json
       EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
-
-      EDC_CATALOG_CACHE_EXECUTION_DELAY_SECONDS: 5
-      EDC_CATALOG_CACHE_EXECUTION_PERIOD_SECONDS: 5
-      EDC_CATALOG_CACHE_PARTITION_NUM_CRAWLERS: 60
+      EDC_CATALOG_CACHE_EXECUTION_DELAY_SECONDS: 10
+      EDC_CATALOG_CACHE_EXECUTION_PERIOD_SECONDS: 30
+      EDC_CATALOG_CACHE_PARTITION_NUM_CRAWLERS: 100
     volumes:
       - ../data/$TRUZZTPORT_ENV_SLUG/broker:/resources/vault/broker
 
-  postgres:
+  postgres-broker:
     image: postgres:14-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: broker
     volumes:
-      - ../data/$TRUZZTPORT_ENV_SLUG/postgres:/var/lib/postgresql/data
+      - ../data/$TRUZZTPORT_ENV_SLUG/postgres-broker:/var/lib/postgresql/data
 
   mongo:
     image: mongo:latest
@@ -129,6 +129,7 @@ services:
     healthcheck:
       disable: true
     depends_on:
+      - postgres-connector
       - broker
     environment:
       WEB_HTTP_PORT: 13001
@@ -153,6 +154,35 @@ services:
       EDC_WEB_REST_CORS_HEADERS: 'origin,content-type,accept,authorization,x-api-key'
       EDC_WEB_REST_CORS_ORIGINS: '*'
       EDC_VAULT: /resources/connector/vault.properties
+      EDC_DATASOURCE_DEFAULT_URL: 'jdbc:postgresql://postgres-connector:5432/connector'
+      EDC_DATASOURCE_DEFAULT_USER: postgres
+      EDC_DATASOURCE_DEFAULT_PASSWORD: password
+      EDC_DATASOURCE_DEFAULT_MAX_POOL_SIZE: 10
+      EDC_DATASOURCE_ASSET_NAME: asset
+      EDC_DATASOURCE_ASSET_URL: 'jdbc:postgresql://postgres-connector:5432/connector'
+      EDC_DATASOURCE_ASSET_USER: postgres
+      EDC_DATASOURCE_ASSET_PASSWORD: password
+      EDC_DATASOURCE_ASSET_MAX_POOL_SIZE: 10
+      EDC_DATASOURCE_CONTRACTDEFINITION_NAME: contractdefinition
+      EDC_DATASOURCE_CONTRACTDEFINITION_URL: 'jdbc:postgresql://postgres-connector:5432/connector'
+      EDC_DATASOURCE_CONTRACTDEFINITION_USER: postgres
+      EDC_DATASOURCE_CONTRACTDEFINITION_PASSWORD: password
+      EDC_DATASOURCE_CONTRACTDEFINITION_MAX_POOL_SIZE: 10
+      EDC_DATASOURCE_CONTRACTNEGOTIATION_NAME: contractnegotiation
+      EDC_DATASOURCE_CONTRACTNEGOTIATION_URL: 'jdbc:postgresql://postgres-connector:5432/connector'
+      EDC_DATASOURCE_CONTRACTNEGOTIATION_USER: postgres
+      EDC_DATASOURCE_CONTRACTNEGOTIATION_PASSWORD: password
+      EDC_DATASOURCE_CONTRACTNEGOTIATION_MAX_POOL_SIZE: 10
+      EDC_DATASOURCE_POLICY_NAME: policy
+      EDC_DATASOURCE_POLICY_URL: 'jdbc:postgresql://postgres-connector:5432/connector'
+      EDC_DATASOURCE_POLICY_USER: postgres
+      EDC_DATASOURCE_POLICY_PASSWORD: password
+      EDC_DATASOURCE_POLICY_MAX_POOL_SIZE: 10
+      EDC_DATASOURCE_TRANSFERPROCESS_NAME: transferprocess
+      EDC_DATASOURCE_TRANSFERPROCESS_URL: 'jdbc:postgresql://postgres-connector:5432/connector'
+      EDC_DATASOURCE_TRANSFERPROCESS_USER: postgres
+      EDC_DATASOURCE_TRANSFERPROCESS_PASSWORD: password
+      EDC_DATASOURCE_TRANSFERPROCESS_MAX_POOL_SIZE: 10
       EDC_BROKER_BASE_URL: http://$TRUZZTPORT_BROKER_DOMAIN
       EDC_CLEARINGHOUSE_LOG_URL: http://$TRUZZTPORT_CLEARING_DOMAIN/messages/log
       EDC_KEYSTORE: /resources/connector/keystore.jks
@@ -165,3 +195,12 @@ services:
       EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
     volumes:
       - ../data/$TRUZZTPORT_ENV_SLUG/connector:/resources/connector
+
+  postgres-connector:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: connector
+    volumes:
+      - ../data/$TRUZZTPORT_ENV_SLUG/postgres-connector:/var/lib/postgresql/data
