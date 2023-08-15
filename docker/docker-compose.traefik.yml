@@ -66,11 +66,9 @@ services:
       - traefik.http.services.connector-management.loadbalancer.server.port=13004
 
       # ids api
-      - traefik.http.routers.connector-ids-http.rule=Host(`$TRUZZTPORT_CONNECTOR_DOMAIN`) && PathPrefix(`//api/v1/ids`)
+      - traefik.http.routers.connector-ids-http.rule=Host(`$TRUZZTPORT_CONNECTOR_DOMAIN`) && PathPrefix(`/api/v1/ids`)
       - traefik.http.routers.connector-ids-http.service=connector-ids
       - traefik.http.services.connector-ids.loadbalancer.server.port=13003
-      - traefik.http.middlewares.example.stripprefix.prefixes=/
-      - traefik.http.routers.connector-ids-http.middlewares=example
 
       # data api
       - traefik.http.routers.connector-data-http.rule=Host(`$TRUZZTPORT_CONNECTOR_DOMAIN`) && PathPrefix(`/api/v1/data`)
