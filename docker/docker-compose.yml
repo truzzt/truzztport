@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   broker:
-    image: ghcr.io/truzzt/federated-catalog:image-v0.0.4
+    image: ghcr.io/truzzt/federated-catalog:image-v0.0.6
     restart: always
     healthcheck:
       disable: true
