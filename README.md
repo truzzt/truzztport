@@ -10,7 +10,7 @@
 ### ✨ [Demo](demo.truzztport.com)
 
 ## Configure
-Edit ```.env``` to your needs. 
+Create a file named ```.env```, in the project root, using the file ```template.env``` as template, and change it for your needs. 
 For a localhost deployment set ```TRUZZTPORT_ENV_SLUG=local``` and ```TRUZZTPORT_BASE_DOMAIN=<YOUR_LOCAL_IP>```
 
 ## Install
@@ -21,9 +21,7 @@ bash scripts/truzzport.sh init
 
 ## Usage
 
-```sh
-Run bash scripts/truzzport.sh add [ENV_NAME] to add a new environment and run bash scripts/truzzport.sh start [ENV_NAME] to start an environment
-```
+Run ```bash scripts/truzzport.sh add [ENV_NAME]``` to add a new environment and run bash ```scripts/truzzport.sh start [ENV_NAME]``` to start an environment
 
 ## 🤝 Contributing
 
