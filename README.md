@@ -10,7 +10,7 @@
 ### ✨ [Demo](demo.truzztport.com)
 
 ## Configure
-Create a file named ```.env```, in the project root, using the file ```template.env``` as template, and change it for your needs. 
+Create a file named ```.env```, in the project root, using the file ```.env.template``` as template, and change it for your needs. 
 For a localhost deployment set ```TRUZZTPORT_ENV_SLUG=local``` and ```TRUZZTPORT_BASE_DOMAIN=<YOUR_LOCAL_IP>```
 
 ## Install

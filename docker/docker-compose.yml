@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   broker:
-    image: ghcr.io/truzzt/federated-catalog:image-v0.0.6
+    image: $TRUZZTPORT_BROKER_IMAGE
     restart: always
     healthcheck:
       disable: true
@@ -124,7 +124,7 @@ services:
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
 
   connector:
-    image: ghcr.io/truzzt/test-connector:main
+    image: $TRUZZTPORT_CONNECTOR_IMAGE
     restart: always
     healthcheck:
       disable: true
