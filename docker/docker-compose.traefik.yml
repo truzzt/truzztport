@@ -48,27 +48,61 @@ services:
       # managment api
       - traefik.http.routers.broker-management-http.rule=Host(`$TRUZZTPORT_BROKER_DOMAIN`)
       - traefik.http.routers.broker-management-http.service=broker-management
+      - traefik.http.routers.broker-management-https.service=broker-management
+      - traefik.http.routers.broker-management-http.entrypoints=http
+      - traefik.http.routers.broker-management-http.middlewares=https-redirect
+      - traefik.http.routers.broker-management-https.rule=Host(`$TRUZZTPORT_BROKER_DOMAIN`)
+      - traefik.http.routers.broker-management-https.entrypoints=https
+      - traefik.http.routers.broker-management-https.tls=true
+      - traefik.http.routers.broker-management-https.tls.certresolver=le
       - traefik.http.services.broker-management.loadbalancer.server.port=13004
 
       # ids api
       - traefik.http.routers.broker-ids-http.rule=Host(`$TRUZZTPORT_BROKER_DOMAIN`) && PathPrefix(`/api/v1/ids`)
       - traefik.http.routers.broker-ids-http.service=broker-ids
+      - traefik.http.routers.broker-ids-https.service=broker-ids
+      - traefik.http.routers.broker-ids-http.entrypoints=http
+      - traefik.http.routers.broker-ids-http.middlewares=https-redirect
+      - traefik.http.routers.broker-ids-https.rule=Host(`$TRUZZTPORT_BROKER_DOMAIN`) && PathPrefix(`/api/v1/ids`)
+      - traefik.http.routers.broker-ids-https.entrypoints=https
+      - traefik.http.routers.broker-ids-https.tls=true
+      - traefik.http.routers.broker-ids-https.tls.certresolver=le
       - traefik.http.services.broker-ids.loadbalancer.server.port=13003
 
       # data api
       - traefik.http.routers.broker-data-http.rule=Host(`$TRUZZTPORT_BROKER_DOMAIN`) && PathPrefix(`/api/v1/data`)
       - traefik.http.routers.broker-data-http.service=broker-data
+      - traefik.http.routers.broker-data-https.service=broker-data
+      - traefik.http.routers.broker-data-http.entrypoints=http
+      - traefik.http.routers.broker-data-http.middlewares=https-redirect
+      - traefik.http.routers.broker-data-https.rule=Host(`$TRUZZTPORT_BROKER_DOMAIN`) && PathPrefix(`/api/v1/data`)
+      - traefik.http.routers.broker-data-https.entrypoints=https
+      - traefik.http.routers.broker-data-https.tls=true
+      - traefik.http.routers.broker-data-https.tls.certresolver=le
       - traefik.http.services.broker-data.loadbalancer.server.port=13002
 
       # api
       - traefik.http.routers.broker-api-http.rule=Host(`$TRUZZTPORT_BROKER_DOMAIN`) && PathPrefix(`/api`)
       - traefik.http.routers.broker-api-http.service=broker-api
+      - traefik.http.routers.broker-api-https.service=broker-api
+      - traefik.http.routers.broker-api-http.entrypoints=http
+      - traefik.http.routers.broker-api-http.middlewares=https-redirect
+      - traefik.http.routers.broker-api-https.rule=Host(`$TRUZZTPORT_BROKER_DOMAIN`) && PathPrefix(`/api`)
+      - traefik.http.routers.broker-api-https.entrypoints=https
+      - traefik.http.routers.broker-api-https.tls=true
+      - traefik.http.routers.broker-api-https.tls.certresolver=le
       - traefik.http.services.broker-api.loadbalancer.server.port=13001
 
   tc-core:
     labels:
       - traefik.enable=true
       - traefik.http.routers.clearing-http.rule=Host(`$TRUZZTPORT_CLEARING_DOMAIN`)
+      - traefik.http.routers.clearing-http.entrypoints=http
+      - traefik.http.routers.clearing-http.middlewares=https-redirect
+      - traefik.http.routers.clearing-https.rule=Host(`$TRUZZTPORT_CLEARING_DOMAIN`)
+      - traefik.http.routers.clearing-https.entrypoints=https
+      - traefik.http.routers.clearing-https.tls=true
+      - traefik.http.routers.clearing-https.tls.certresolver=le
       - traefik.http.services.clearing.loadbalancer.server.port=9999
 
   connector:
@@ -77,19 +111,47 @@ services:
       # management api
       - traefik.http.routers.connector-management-http.rule=Host(`$TRUZZTPORT_CONNECTOR_DOMAIN`) && PathPrefix(`/api/v1/management`)
       - traefik.http.routers.connector-management-http.service=connector-management
+      - traefik.http.routers.connector-management-https.service=connector-management
+      - traefik.http.routers.connector-management-http.entrypoints=http
+      - traefik.http.routers.connector-management-http.middlewares=https-redirect
+      - traefik.http.routers.connector-management-https.rule=Host(`$TRUZZTPORT_CONNECTOR_DOMAIN`) && PathPrefix(`/api/v1/management`)
+      - traefik.http.routers.connector-management-https.entrypoints=https
+      - traefik.http.routers.connector-management-https.tls=true
+      - traefik.http.routers.connector-management-https.tls.certresolver=le
       - traefik.http.services.connector-management.loadbalancer.server.port=13004
 
       # ids api
       - traefik.http.routers.connector-ids-http.rule=Host(`$TRUZZTPORT_CONNECTOR_DOMAIN`) && PathPrefix(`/api/v1/ids`)
       - traefik.http.routers.connector-ids-http.service=connector-ids
+      - traefik.http.routers.connector-ids-https.service=connector-ids
+      - traefik.http.routers.connector-ids-http.entrypoints=http
+      - traefik.http.routers.connector-ids-http.middlewares=https-redirect
+      - traefik.http.routers.connector-ids-https.rule=Host(`$TRUZZTPORT_CONNECTOR_DOMAIN`) && PathPrefix(`/api/v1/ids`)
+      - traefik.http.routers.connector-ids-https.entrypoints=https
+      - traefik.http.routers.connector-ids-https.tls=true
+      - traefik.http.routers.connector-ids-https.tls.certresolver=le
       - traefik.http.services.connector-ids.loadbalancer.server.port=13003
 
       # data api
       - traefik.http.routers.connector-data-http.rule=Host(`$TRUZZTPORT_CONNECTOR_DOMAIN`) && PathPrefix(`/api/v1/data`)
       - traefik.http.routers.connector-data-http.service=connector-data
+      - traefik.http.routers.connector-data-https.service=connector-data
+      - traefik.http.routers.connector-data-http.entrypoints=http
+      - traefik.http.routers.connector-data-http.middlewares=https-redirect
+      - traefik.http.routers.connector-data-https.rule=Host(`$TRUZZTPORT_CONNECTOR_DOMAIN`) && PathPrefix(`/api/v1/data`)
+      - traefik.http.routers.connector-data-https.entrypoints=https
+      - traefik.http.routers.connector-data-https.tls=true
+      - traefik.http.routers.connector-data-https.tls.certresolver=le
       - traefik.http.services.connector-data.loadbalancer.server.port=13002
 
       # api
       - traefik.http.routers.connector-api-http.rule=Host(`$TRUZZTPORT_CONNECTOR_DOMAIN`) && PathPrefix(`/api`)
       - traefik.http.routers.connector-api-http.service=connector-api
+      - traefik.http.routers.connector-api-https.service=connector-api
+      - traefik.http.routers.connector-api-http.entrypoints=http
+      - traefik.http.routers.connector-api-http.middlewares=https-redirect
+      - traefik.http.routers.connector-api-https.rule=Host(`$TRUZZTPORT_CONNECTOR_DOMAIN`) && PathPrefix(`/api`)
+      - traefik.http.routers.connector-api-https.entrypoints=https
+      - traefik.http.routers.connector-api-https.tls=true
+      - traefik.http.routers.connector-api-https.tls.certresolver=le
       - traefik.http.services.connector-api.loadbalancer.server.port=13001
