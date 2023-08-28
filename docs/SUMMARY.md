@@ -1,5 +1,5 @@
 # Summary
 
 - [Installation](./installation.md)
-- [Use]()
-- [Developing]()
+- [Usage](./usage.md)
+- [Files](./files.md)
