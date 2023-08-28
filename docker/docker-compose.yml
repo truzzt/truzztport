@@ -1,6 +1,10 @@
 version: "3.8"
 
 services:
+  broker-ui:
+    image: ghcr.io/truzzt/ids-basecamp-broker-ui:truzzt-design
+    restart: always
+
   broker:
     image: ghcr.io/truzzt/federated-catalog:image-v0.0.6
     restart: always
