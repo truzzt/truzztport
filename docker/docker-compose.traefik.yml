@@ -5,27 +5,41 @@ services:
     image: traefik:v2.10
     ports:
       - 80:80
+      - 443:443
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ../data/${TRUZZTPORT_ENV_SLUG}/proxy:/certificates
     command:
       - --providers.docker=true
-      - --entryPoints.web.address=:80
+      - --entrypoints.http.address=:80
+      - --entrypoints.https.address=:443
       - --providers.docker.exposedbydefault=false
       - --api.dashboard=true
       # - --log.level=DEBUG
       - --accesslog=true
+      - --certificatesresolvers.le.acme.email=it@truzzt.com
+      - --certificatesresolvers.le.acme.storage=/certificates/acme.json
+      # - --certificatesresolvers.le.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=http
     labels:
       - traefik.enable=true
       - traefik.http.routers.dashboard.rule=Host(`traefik.demo.truzztport.com`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
       - traefik.http.routers.dashboard.service=api@internal
       - traefik.http.routers.dashboard.middlewares=auth
       - traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$sfMMH.Mj$$M3PtggBoBBG1cc8pGboD80
+      - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.https-redirect.redirectscheme.permanent=true
 
   daps:
     labels:
       - traefik.enable=true
       - traefik.http.routers.daps-http.rule=Host(`$TRUZZTPORT_DAPS_DOMAIN`)
+      - traefik.http.routers.daps-http.entrypoints=http
+      - traefik.http.routers.daps-http.middlewares=https-redirect
+      - traefik.http.routers.daps-https.rule=Host(`$TRUZZTPORT_DAPS_DOMAIN`)
+      - traefik.http.routers.daps-https.entrypoints=https
+      - traefik.http.routers.daps-https.tls=true
+      - traefik.http.routers.daps-https.tls.certresolver=le
       - traefik.http.services.daps.loadbalancer.server.port=4567   
 
   broker:
