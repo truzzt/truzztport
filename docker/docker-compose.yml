@@ -33,7 +33,7 @@ services:
       EDC_FLYWAY_REPAIR: 'false'
       EDC_DATASOURCE_DEFAULT_URL: 'jdbc:postgresql://postgres:5432/broker'
       EDC_DATASOURCE_DEFAULT_USER: 'postgres'
-      EDC_DATASOURCE_DEFAULT_PASSWORD: 'password'
+      EDC_DATASOURCE_DEFAULT_PASSWORD: $TRUZZTPORT_POSTGRES_PASSWORD
       EDC_VAULT: /resources/vault/broker/vault.properties
       EDC_KEYSTORE: /resources/vault/broker/keystore.jks
       EDC_KEYSTORE_PASSWORD: password
@@ -54,7 +54,7 @@ services:
     image: postgres:14-alpine
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: $TRUZZTPORT_POSTGRES_PASSWORD
       POSTGRES_DB: broker
     volumes:
       - ../data/$TRUZZTPORT_ENV_SLUG/postgres:/var/lib/postgresql/data
