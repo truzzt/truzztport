@@ -1,3 +1,22 @@
+# [1.1.0](https://github.com/truzzt/truzztport/compare/v1.0.0...v1.1.0) (2023-08-28)
+
+
+### Bug Fixes
+
+* **broker:** bumb broker version ([736e148](https://github.com/truzzt/truzztport/commit/736e14881f71942cc732445939373583608ff64f))
+* **broker:** make postgres password as env ([f553a1b](https://github.com/truzzt/truzztport/commit/f553a1b0fe8e12972b7f63613d0443aeb5072ba7))
+* **connector:** removed double slash workaround ([3a97d37](https://github.com/truzzt/truzztport/commit/3a97d3793db803ba3349e9ba87906d7f6095d3d0))
+* **docs:** add special env local ([a3162fa](https://github.com/truzzt/truzztport/commit/a3162fa14d959b93ffb8a1c129c116cdff440bf1))
+* **docs:** updated documentation ([75fe49f](https://github.com/truzzt/truzztport/commit/75fe49f13cd2fb192ff1989d1f7e5fa716715f94))
+* jmx ports on debug mode ([1ba3659](https://github.com/truzzt/truzztport/commit/1ba365903e7608bece5a4ae1ca0bfa45b999bbae))
+* local slug execution and debug mode ([b3b1811](https://github.com/truzzt/truzztport/commit/b3b181199396831ff41e0a0551c6facac45e4f79))
+
+
+### Features
+
+* **broker-ui:** add UI for broker ([30736d3](https://github.com/truzzt/truzztport/commit/30736d35f3927ea3878d66498d627790a270df41))
+* **proxy:** enable https ([b4df853](https://github.com/truzzt/truzztport/commit/b4df853e8a79864102f12734144b788a17b571bc))
+
 # 1.0.0 (2023-08-01)
 
 
