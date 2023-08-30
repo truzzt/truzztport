@@ -24,10 +24,10 @@ services:
       EDC_IDS_ID: urn:connector:broker
       EDC_IDS_TITLE: 'truzzt IDS BaseCamp Broker'
       EDC_IDS_DESCRIPTION: "Truzzt's IDS BaseCamp Broker"
-      EDC_IDS_ENDPOINT: http://$TRUZZTPORT_BROKER_DOMAIN/api/v1/ids
-      IDS_WEBHOOK_ADDRESS: http://$TRUZZTPORT_BROKER_DOMAIN
-      EDC_IDS_CURATOR: http://truzzt.com
-      EDC_IDS_MAINTAINER: http://truzzt.com
+      EDC_IDS_ENDPOINT: https://$TRUZZTPORT_BROKER_DOMAIN/api/v1/ids
+      IDS_WEBHOOK_ADDRESS: https://$TRUZZTPORT_BROKER_DOMAIN
+      EDC_IDS_CURATOR: https://truzzt.com
+      EDC_IDS_MAINTAINER: https://truzzt.com
       EDC_CONNECTOR_NAME: truzzt-example-connector
       EDC_HOSTNAME: $TRUZZTPORT_BROKER_DOMAIN
       EDC_API_AUTH_KEY: ApiKeyDefaultValue
@@ -44,8 +44,8 @@ services:
       EDC_OAUTH_CERTIFICATE_ALIAS: 1
       EDC_OAUTH_PRIVATE_KEY_ALIAS: 1
       EDC_OAUTH_CLIENT_ID: $TRUZZTPORT_BROKER_SKI_AKI
-      EDC_OAUTH_TOKEN_URL: http://$TRUZZTPORT_DAPS_DOMAIN/token
-      EDC_OAUTH_PROVIDER_JWKS_URL: http://$TRUZZTPORT_DAPS_DOMAIN/jwks.json
+      EDC_OAUTH_TOKEN_URL: https://$TRUZZTPORT_DAPS_DOMAIN/token
+      EDC_OAUTH_PROVIDER_JWKS_URL: https://$TRUZZTPORT_DAPS_DOMAIN/jwks.json
       EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
 
       EDC_CATALOG_CACHE_EXECUTION_DELAY_SECONDS: 5
@@ -90,9 +90,9 @@ services:
         # - ../data/$TRUZZTPORT_ENV_SLUG/clearing/truststore.p12:/root/etc/truststore.p12
         - ../data/$TRUZZTPORT_ENV_SLUG/clearing/clearing-house-routes.xml:/root/deploy/clearing-house-routes.xml
     environment:
-        TC_DAPS_URL: http://$TRUZZTPORT_DAPS_DOMAIN
-        TC_CH_ISSUER_CONNECTOR: http://$TRUZZTPORT_CLEARING_DOMAIN
-        TC_CH_AGENT: http://$TRUZZTPORT_CLEARING_DOMAIN
+        TC_DAPS_URL: https://$TRUZZTPORT_DAPS_DOMAIN
+        TC_CH_ISSUER_CONNECTOR: https://$TRUZZTPORT_CLEARING_DOMAIN
+        TC_CH_AGENT: https://$TRUZZTPORT_CLEARING_DOMAIN
 
   keyring:
     image: ghcr.io/truzzt/truzztport/keyring:latest
@@ -146,8 +146,8 @@ services:
       EDC_IDS_ID: urn:connector:example-connector
       EDC_IDS_TITLE: 'truzzt dev connector'
       EDC_IDS_DESCRIPTION: 'Minimally configured Open Source EDC built by truzzt.'
-      EDC_IDS_ENDPOINT: http://$TRUZZTPORT_CONNECTOR_DOMAIN/api/v1/ids
-      IDS_WEBHOOK_ADDRESS: http://$TRUZZTPORT_CONNECTOR_DOMAIN
+      EDC_IDS_ENDPOINT: https://$TRUZZTPORT_CONNECTOR_DOMAIN/api/v1/ids
+      IDS_WEBHOOK_ADDRESS: https://$TRUZZTPORT_CONNECTOR_DOMAIN
       EDC_IDS_CURATOR: https://truzzt.com
       EDC_IDS_MAINTAINER: https://truzzt.com
       EDC_CONNECTOR_NAME: truzzt-dev-connector
@@ -157,15 +157,15 @@ services:
       EDC_WEB_REST_CORS_HEADERS: 'origin,content-type,accept,authorization,x-api-key'
       EDC_WEB_REST_CORS_ORIGINS: '*'
       EDC_VAULT: /resources/connector/vault.properties
-      EDC_BROKER_BASE_URL: http://$TRUZZTPORT_BROKER_DOMAIN
-      EDC_CLEARINGHOUSE_LOG_URL: http://$TRUZZTPORT_CLEARING_DOMAIN/messages/log
+      EDC_BROKER_BASE_URL: https://$TRUZZTPORT_BROKER_DOMAIN
+      EDC_CLEARINGHOUSE_LOG_URL: https://$TRUZZTPORT_CLEARING_DOMAIN/messages/log
       EDC_KEYSTORE: /resources/connector/keystore.jks
       EDC_KEYSTORE_PASSWORD: password
       EDC_OAUTH_PUBLIC_KEY_ALIAS: 1
       EDC_OAUTH_PRIVATE_KEY_ALIAS: 1
       EDC_OAUTH_CLIENT_ID: $TRUZZTPORT_CONNECTOR_SKI_AKI
-      EDC_OAUTH_TOKEN_URL: http://$TRUZZTPORT_DAPS_DOMAIN/token
-      EDC_OAUTH_PROVIDER_JWKS_URL: http://$TRUZZTPORT_DAPS_DOMAIN/jwks.json
+      EDC_OAUTH_TOKEN_URL: https://$TRUZZTPORT_DAPS_DOMAIN/token
+      EDC_OAUTH_PROVIDER_JWKS_URL: https://$TRUZZTPORT_DAPS_DOMAIN/jwks.json
       EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
     volumes:
       - ../data/$TRUZZTPORT_ENV_SLUG/connector:/resources/connector
