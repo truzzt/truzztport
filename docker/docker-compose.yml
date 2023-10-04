@@ -71,63 +71,111 @@ services:
   daps:
     image: ghcr.io/fraunhofer-aisec/omejdn-server:1.7.1
     environment:
-      - OMEJDN_OPENID=true
-      - OMEJDN_ACCEPT_AUDIENCE=idsc:IDS_CONNECTORS_ALL
-      - OMEJDN_DEFAULT_AUDIENCE=idsc:IDS_CONNECTORS_ALL
-      - OMEJDN_ADMIN=${TRUZZTPORT_ADMIN_USERNAME}:${TRUZZTPORT_ADMIN_PASSWORD}
+      OMEJDN_OPENID: true
+      OMEJDN_ACCEPT_AUDIENCE: idsc:IDS_CONNECTORS_ALL
+      OMEJDN_DEFAULT_AUDIENCE: idsc:IDS_CONNECTORS_ALL
+      OMEJDN_ADMIN: ${TRUZZTPORT_ADMIN_USERNAME}:${TRUZZTPORT_ADMIN_PASSWORD}
     volumes:
       - ../data/$TRUZZTPORT_ENV_SLUG/daps/config/:/opt/config/
       - ../data/$TRUZZTPORT_ENV_SLUG/daps/keys:/opt/keys/
 
-  tc-core:
-    image: ghcr.io/truzzt/truzztport/clearing:latest
-    # tty: true
-    # stdin_open: true
-    volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
-        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/allow-all-flows.pl:/root/deploy/allow-all-flows.pl
-        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/keystore.p12:/root/etc/keystore.p12
-        # - ../data/$TRUZZTPORT_ENV_SLUG/clearing/truststore.p12:/root/etc/truststore.p12
-        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/clearing-house-routes.xml:/root/deploy/clearing-house-routes.xml
-    environment:
-        TC_DAPS_URL: https://$TRUZZTPORT_DAPS_DOMAIN
-        TC_CH_ISSUER_CONNECTOR: https://$TRUZZTPORT_CLEARING_DOMAIN
-        TC_CH_AGENT: https://$TRUZZTPORT_CLEARING_DOMAIN
-
-  keyring:
-    image: ghcr.io/truzzt/truzztport/keyring:latest
-    environment:
-        - API_LOG_LEVEL=Info
-    volumes:
-        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/keyring/init_db:/server/init_db
-        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-keyring.toml:/server/Rocket.toml
-        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
-
-  document:
-    image: ghcr.io/truzzt/truzztport/document:latest
+  ch-app:
+    image: ghcr.io/truzzt/ids-basecamp-clearinghouse/chapp:latest
     depends_on:
-        - keyring
+      - mongo
     environment:
-        - API_LOG_LEVEL=Info
+      CH_APP_PROCESS_DATABASE_URL: mongodb://mongo:27017
+      CH_APP_KEYRING_DATABASE_URL: mongodb://mongo:27017
+      CH_APP_DOCUMENT_DATABASE_URL: mongodb://mongo:27017
+      CH_APP_CLEAR_DB: true
+      CH_APP_LOG_LEVEL: INFO
+      SERVICE_ID_LOG: idsc:IDS_CONNECTORS_ALL
+      SHARED_SECRET: 123
+  
+  ch-edc:
+    image: ghcr.io/truzzt/ids-basecamp-clearinghouse:feat-edc-extension
+    environment:
+      TRUZZT_CLEARINGHOUSE_JWT_AUDIENCE: idsc:IDS_CONNECTORS_ALL
+      TRUZZT_CLEARINGHOUSE_JWT_ISSUER: https://$TRUZZTPORT_CLEARING_DOMAIN
+      TRUZZT_CLEARINGHOUSE_JWT_SIGN_SECRET: 123
+      TRUZZT_CLEARINGHOUSE_JWT_EXPIRES_AT: 60
+      TRUZZT_CLEARINGHOUSE_APP_BASE_URL: $TRUZZTPORT_CLEARING_DOMAIN
+      WEB_HTTP_PORT: 13001
+      WEB_HTTP_PATH: /api
+      WEB_HTTP_DATA_PORT: 13002
+      WEB_HTTP_DATA_PATH: /api/v1/data
+      WEB_HTTP_IDS_PORT: 13003
+      WEB_HTTP_IDS_PATH: /api/v1/ids
+      WEB_HTTP_MANAGEMENT_PORT: 13004
+      WEB_HTTP_MANAGEMENT_PATH: /
+      EDC_IDS_ID: urn:connector:example-connector
+      EDC_IDS_TITLE: 'truzzt dev connector'
+      EDC_IDS_DESCRIPTION: 'Minimally configured Open Source EDC built by truzzt.'
+      EDC_IDS_ENDPOINT: https://$TRUZZTPORT_CLEARING_DOMAIN/api/v1/ids
+      IDS_WEBHOOK_ADDRESS: https://$TRUZZTPORT_CLEARING_DOMAIN
+      EDC_IDS_CURATOR: https://truzzt.com
+      EDC_IDS_MAINTAINER: https://truzzt.com
+      EDC_CONNECTOR_NAME: truzzt-dev-connector
+      EDC_HOSTNAME: $TRUZZTPORT_CLEARING_DOMAIN
+      EDC_API_AUTH_KEY: ApiKeyDefaultValue
+      EDC_WEB_REST_CORS_ENABLED: 'true'
+      EDC_WEB_REST_CORS_HEADERS: 'origin,content-type,accept,authorization,x-api-key'
+      EDC_WEB_REST_CORS_ORIGINS: '*'
+      EDC_VAULT: /resources/connector/vault.properties
+      EDC_KEYSTORE: /resources/connector/keystore.jks
+      EDC_KEYSTORE_PASSWORD: password
+      EDC_OAUTH_PUBLIC_KEY_ALIAS: 1
+      EDC_OAUTH_PRIVATE_KEY_ALIAS: 1
+      EDC_OAUTH_CLIENT_ID: $TRUZZTPORT_CONNECTOR_SKI_AKI
+      EDC_OAUTH_TOKEN_URL: https://$TRUZZTPORT_DAPS_DOMAIN/token
+      EDC_OAUTH_PROVIDER_JWKS_URL: https://$TRUZZTPORT_DAPS_DOMAIN/jwks.json
+      EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
     volumes:
-        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-document.toml:/server/Rocket.toml
-        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
 
-  logging:
-    image: ghcr.io/truzzt/truzztport/logging:latest
+  connectorA:
+    image: ghcr.io/truzzt/test-connector:main
+    restart: always
     healthcheck:
       disable: true
     depends_on:
-        - document
-        - keyring
+      - broker
     environment:
-        - API_LOG_LEVEL=Debug
+      WEB_HTTP_PORT: 13001
+      WEB_HTTP_PATH: /api
+      WEB_HTTP_DATA_PORT: 13002
+      WEB_HTTP_DATA_PATH: /api/v1/data
+      WEB_HTTP_IDS_PORT: 13003
+      WEB_HTTP_IDS_PATH: /api/v1/ids
+      WEB_HTTP_MANAGEMENT_PORT: 13004
+      WEB_HTTP_MANAGEMENT_PATH: /api/v1/management
+      EDC_IDS_ID: urn:connector:example-connector
+      EDC_IDS_TITLE: 'truzzt dev connector'
+      EDC_IDS_DESCRIPTION: 'Minimally configured Open Source EDC built by truzzt.'
+      EDC_IDS_ENDPOINT: https://$TRUZZTPORT_CONNECTOR_DOMAIN/api/v1/ids
+      IDS_WEBHOOK_ADDRESS: https://$TRUZZTPORT_CONNECTOR_DOMAIN
+      EDC_IDS_CURATOR: https://truzzt.com
+      EDC_IDS_MAINTAINER: https://truzzt.com
+      EDC_CONNECTOR_NAME: truzzt-dev-connector
+      EDC_HOSTNAME: $TRUZZTPORT_CONNECTOR_DOMAIN
+      EDC_API_AUTH_KEY: ApiKeyDefaultValue
+      EDC_WEB_REST_CORS_ENABLED: 'true'
+      EDC_WEB_REST_CORS_HEADERS: 'origin,content-type,accept,authorization,x-api-key'
+      EDC_WEB_REST_CORS_ORIGINS: '*'
+      EDC_VAULT: /resources/connector/vault.properties
+      EDC_BROKER_BASE_URL: https://$TRUZZTPORT_BROKER_DOMAIN
+      EDC_CLEARINGHOUSE_LOG_URL: https://$TRUZZTPORT_CLEARING_DOMAIN/messages/log
+      EDC_KEYSTORE: /resources/connector/keystore.jks
+      EDC_KEYSTORE_PASSWORD: password
+      EDC_OAUTH_PUBLIC_KEY_ALIAS: 1
+      EDC_OAUTH_PRIVATE_KEY_ALIAS: 1
+      EDC_OAUTH_CLIENT_ID: $TRUZZTPORT_CONNECTOR_SKI_AKI
+      EDC_OAUTH_TOKEN_URL: https://$TRUZZTPORT_DAPS_DOMAIN/token
+      EDC_OAUTH_PROVIDER_JWKS_URL: https://$TRUZZTPORT_DAPS_DOMAIN/jwks.json
+      EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
     volumes:
-        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/Rocket-logging.toml:/server/Rocket.toml
-        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/keys:/server/keys
-        - ../data/$TRUZZTPORT_ENV_SLUG/clearing/daps.der:/server/certs/daps.der
+      - ../data/$TRUZZTPORT_ENV_SLUG/connector:/resources/connector
 
-  connector:
+  connectorB:
     image: ghcr.io/truzzt/test-connector:main
     restart: always
     healthcheck:
