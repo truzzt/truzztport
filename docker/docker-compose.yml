@@ -80,7 +80,7 @@ services:
       - ../data/$TRUZZTPORT_ENV_SLUG/daps/keys:/opt/keys/
 
   ch-app:
-    image: ghcr.io/truzzt/ids-basecamp-clearinghouse/chapp:latest
+    image: ghcr.io/truzzt/ids-basecamp-clearing/ch-app:1.0.0-alpha.3
     depends_on:
       - mongo
     environment:
@@ -130,7 +130,6 @@ services:
       EDC_OAUTH_TOKEN_URL: https://$TRUZZTPORT_DAPS_DOMAIN/token
       EDC_OAUTH_PROVIDER_JWKS_URL: https://$TRUZZTPORT_DAPS_DOMAIN/jwks.json
       EDC_OAUTH_PROVIDER_AUDIENCE: idsc:IDS_CONNECTORS_ALL
-    volumes:
 
   connectorA:
     image: ghcr.io/truzzt/test-connector:main
